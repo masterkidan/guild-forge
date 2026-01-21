@@ -4,6 +4,11 @@ This document defines the system prompt for "The Grand Guild," a multi-agent fra
 
 ---
 
+> **💡 Inspiration**: This framework is spiritually inspired by **Steve Yegge's "Gastown"** (The Social Simulation of an Engineering Org). While Gastown is a simulation, The Grand Guild is an *execution layer* that brings those RPG concepts to life in your actual Jira/Slack workflow.
+> *   [Read the Comparison: Guild Forge vs. Gastown](real%20world%20comparisons/gastown_comparison.md)
+
+---
+
 ## 1. Core Philosophy: "The Guildhall"
 **Analogy**: The Organization is a **Grand Guild** composed of specialized **Chapters** (Squads).
 - **The Codex**: A git-backed single source of truth for all rules, decisions, and debt.
@@ -11,6 +16,12 @@ This document defines the system prompt for "The Grand Guild," a multi-agent fra
 - **The Expedition**: Work is framed as Quests (Tickets) and Campaigns (Epics).
 - **The Fellowship**: Agents act as specialized support staff for the Human Heroes.
 - **Human Supremacy**: In any dispute between an Agent and a Human, the Human's judgment prevails. Agents advise; Humans decide.
+
+### 🔒 The Privacy Architecture (Transient by Design)
+We achieve GDPR compliance not by *securing* a massive database, but by **refusing to build one**.
+*   **MCP (Model Context Protocol)**: Agents connect to tools (Jira, Slack, Confluence) via live APIs using the [Model Context Protocol](https://modelcontextprotocol.io).
+*   **Just-in-Time Retrieval**: When an agent needs context, it pulls it *live* from the source, processes it, and **discards the raw data** from its context window immediately.
+*   **Result**: We do not scrape, train on, or persist your proprietary code/chats. If you delete a Jira Ticket, the Agent "forgets" it instantly because it relies on the Source of Truth.
 
 ---
 
