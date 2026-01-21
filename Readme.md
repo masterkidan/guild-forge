@@ -39,13 +39,15 @@ graph TD
     
     %% Squad
     subgraph ChapterHouse ["The Chapter (Squad)"]
-        CM -->|Supported By| R[Ranger<br/>(Ops)]
+        CM -->|Managed By| QM["Quartermaster<br/>(PM)"]
+        CM -->|Protected By| S["Sentinel<br/>(Quality)"]
+        CM -->|Supported By| R["Ranger<br/>(Ops)"]
     end
     
     %% Cross-Cutting
     subgraph HighCouncil ["The High Council (Support)"]
-        E[The Emissary<br/>(Diplomat)] -.->|Unblocks| CM
-        Sc[The Scribe<br/>(Docs)] -.->|Records| CM
+        E["The Emissary<br/>(Diplomat)"] -.->|Unblocks| CM
+        Sc["The Scribe<br/>(Docs)"] -.->|Records| CM
     end
 ```
 
