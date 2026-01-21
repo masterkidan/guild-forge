@@ -36,6 +36,7 @@ graph TD
     GM["The Grandmaster<br/>(Director)"] -->|Edicts| CM["The Chapter Master<br/>(Squad Lead)"]
     GM -->|Strategy| H["The Herald<br/>(Talent)"]
     GM -->|R&D| A["The Artificer<br/>(Innovation)"]
+    GM -->|Infra| M["The Mason<br/>(Platform)"]
     
     %% Squad
     subgraph ChapterHouse ["The Chapter (Squad)"]
@@ -177,6 +178,15 @@ sequenceDiagram
 - **Prophecy**: Predicts scalability bottlenecks before they happen.
 - **📝 Basis of Design**: *Building Evolutionary Architectures* (Ford et al).
 
+### 🧱 The Mason (Platform Agent)
+**Analogy**: The Builder.
+**Focus**: Infrastructure, CI/CD, Cost Management.
+**Responsibilities**:
+- **The Foundry**: Maintains the CI/CD pipelines.
+- **The Coffers**: Watches the cloud bill. "We are spending too much on unattached EBS volumes."
+- **The Manifest**: Maintains the "Deployment Log" so we know exactly what code is running in Prod.
+- **📝 Basis of Design**: *Platform Engineering* (Gartner).
+
 ### 🕵️‍♂️ The Investigator (Post-War Analyst)
 **Analogy**: The Forensic Mage.
 - **Focus**: Learning from Failure (Post-Mortem/RCA).
@@ -299,6 +309,21 @@ Humans interact via clear, command-based protocols to avoid ambiguity.
 - **Agent Action**:
     - **Gatekeeper**: Instantly closes any PR introducing a library on the `Hold` ring.
     - **Message**: "Blocked by Radar. `jQuery` is deprecated. Use `VanillaJS`."
+
+### Protocol: The Rite of Departure (Lifecycle)
+- **Owner**: The Herald.
+- **Trigger**: Vacation or Resignation.
+- **Mechanism**:
+    1.  **Vacation (`!guild away`)**: Updates Sprint Capacity (Mana).
+    2.  **Transfer**: Triggers a **Legacy Audit** (Who owns your code?).
+    3.  **Departure**: Removes user from the Guild Roster.
+
+### Protocol: The Royal Charter (Intake Sanity)
+- **Owner**: The Grandmaster.
+- **Trigger**: New Epic / Service Request.
+- **Mechanism**:
+    1.  **Charter Check**: "Does this service map to a known `charters.json` entry?"
+    2.  **Zombie Detection**: "Why are we building this? Link it to a Quarterly Edict or close it."
 
 ---
 
