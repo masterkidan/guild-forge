@@ -33,14 +33,12 @@ We achieve GDPR compliance not by *securing* a massive database, but by **refusi
 ```mermaid
 graph TD
     %% Roles
-    GM[The Grandmaster<br/>(Director)] -->|Edicts| CM[The Chapter Master<br/>(Squad Lead)]
-    GM -->|Strategy| H[The Herald<br/>(Talent)]
-    GM -->|R&D| A[The Artificer<br/>(Innovation)]
+    GM["The Grandmaster<br/>(Director)"] -->|Edicts| CM["The Chapter Master<br/>(Squad Lead)"]
+    GM -->|Strategy| H["The Herald<br/>(Talent)"]
+    GM -->|R&D| A["The Artificer<br/>(Innovation)"]
     
     %% Squad
     subgraph ChapterHouse ["The Chapter (Squad)"]
-        CM -->|Managed By| QM[Quartermaster<br/>(PM)]
-        CM -->|Protected By| S[Sentinel<br/>(Quality)]
         CM -->|Supported By| R[Ranger<br/>(Ops)]
     end
     
