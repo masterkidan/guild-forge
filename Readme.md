@@ -252,6 +252,15 @@ sequenceDiagram
     3. The "Debt" is logged in the *Book of Grudges* (Debt Backlog) with a mandatory repayment date set for next Sprint.
     4. The Grandmaster logs: "Authorized by Command. Business Value > Tech Debt."
 
+### Protocol: The Hierarchy of Conflicts
+*When Agents disagree, this Law prevails:*
+1.  **Public vs System**: If **Town Crier** screams "Public Outcry" (Pain > 90), **Ranger** MUST declare P0, even if logs are clean. *Trust the User.*
+2.  **Strategy vs Schedule**: If **Grandmaster** issues an Edict, **Quartermaster** MUST re-plan, even if it breaks the Gantt. *Strategy flows down.*
+3.  **Safety vs Speed**:
+    *   **Sentinel** blocks *Merging* (Synchronous Safety).
+    *   **Forge Master** blocks *Planning* (Asynchronous Sustainability).
+    *   *Rule*: Never block a Hotfix for Tech Debt.
+
 ---
 
 ## 6. The Hero's Interface (Human Interaction Guide)
