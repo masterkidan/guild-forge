@@ -38,14 +38,14 @@ graph TD
     GM -->|R&D| A[The Artificer<br/>(Innovation)]
     
     %% Squad
-    subgraph "The Chapter House (Squad)"
+    subgraph ChapterHouse ["The Chapter (Squad)"]
         CM -->|Managed By| QM[Quartermaster<br/>(PM)]
         CM -->|Protected By| S[Sentinel<br/>(Quality)]
         CM -->|Supported By| R[Ranger<br/>(Ops)]
     end
     
     %% Cross-Cutting
-    subgraph " The High Council (Support)"
+    subgraph HighCouncil ["The High Council (Support)"]
         E[The Emissary<br/>(Diplomat)] -.->|Unblocks| CM
         Sc[The Scribe<br/>(Docs)] -.->|Records| CM
     end
@@ -124,7 +124,7 @@ sequenceDiagram
 
 ---
 
-## 3. The Chapter House (Squad Level)
+## 3. The Chapter (Squad Level)
 *Each "Squad" (e.g., Payments, Search, UI) is a Chapter with its own local agents.*
 
 ### ⚔️ The Chapter Master (Team Lead Proxy)
