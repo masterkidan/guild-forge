@@ -15,6 +15,7 @@ This document defines the system prompt for "The Grand Guild," a multi-agent fra
 - **The Daily Chronicle (Digest)**: Agents do NOT DM users instantly (unless critical). All non-urgent updates are compiled into a morning briefing.
 - **The Expedition**: Work is framed as Quests (Tickets) and Campaigns (Epics).
 - **The Fellowship**: Agents act as specialized support staff for the Human Heroes.
+- **The Hero's Toolkit**: A dedicated layer of agents (Squire, Weaponsmith, Mentor) that serve the individual developer, not the organization.
 - **Human Supremacy**: In any dispute between an Agent and a Human, the Human's judgment prevails. Agents advise; Humans decide.
 
 ### 🔒 The Privacy Architecture (Transient by Design)
@@ -22,6 +23,11 @@ We achieve GDPR compliance not by *securing* a massive database, but by **refusi
 *   **MCP (Model Context Protocol)**: Agents connect to tools (Jira, Slack, Confluence) via live APIs using the [Model Context Protocol](https://modelcontextprotocol.io).
 *   **Just-in-Time Retrieval**: When an agent needs context, it pulls it *live* from the source, processes it, and **discards the raw data** from its context window immediately.
 *   **Result**: We do not scrape, train on, or persist your proprietary code/chats. If you delete a Jira Ticket, the Agent "forgets" it instantly because it relies on the Source of Truth.
+
+#### HR System Integration (Sensitive PII)
+*   **Level Data**: Hero Levels (L1-L5) are queried from your HR System (ADP, Workday) via MCP. **Never stored locally.**
+*   **Compensation**: Guild Forge **NEVER** accesses salary or compensation data.
+*   **Performance Reviews**: Read-only access (if enabled) for generating Brag Docs. Agent cannot write to HR systems.
 
 ---
 
@@ -32,7 +38,7 @@ We achieve GDPR compliance not by *securing* a massive database, but by **refusi
 ### A. The Guild Hierarchy
 ```mermaid
 graph TD
-    %% Roles
+    %% Org Layer (Top-Down)
     GM["The Grandmaster<br/>(Director)"] -->|Edicts| CM["The Chapter Master<br/>(Squad Lead)"]
     GM -->|Strategy| H["The Herald<br/>(Talent)"]
     GM -->|R&D| A["The Artificer<br/>(Innovation)"]
@@ -40,11 +46,22 @@ graph TD
     
     %% Squad
     subgraph ChapterHouse ["The Chapter (Squad)"]
-        CM -->|Managed By| QM["Quartermaster<br/>(PM)"]
-        CM -->|Protected By| S["Sentinel<br/>(Quality)"]
-        CM -->|Supported By| R["Ranger<br/>(Ops)"]
+        CM -->|Managed By| QM["The Quartermaster<br/>(PM)"]
+        CM -->|Protected By| S["The Sentinel<br/>(Quality)"]
+        CM -->|Supported By| R["The Ranger<br/>(Ops)"]
     end
     
+    %% Hero Layer (Bottom-Up)
+    subgraph HeroLayer ["The Hero's Toolkit (Empowerment)"]
+        Hero["The Hero (Developer)"]
+        Squire["The Squire<br/>(Personal Assistant)"] --- Hero
+    end
+
+    %% Interaction
+    QM -->|Assigns Quests| Hero
+    Hero -->|Status / Code| QM
+    Squire <-->|Liaison| ChapterHouse
+```    
     %% Cross-Cutting
     subgraph HighCouncil ["The High Council (Support)"]
         E["The Emissary<br/>(Diplomat)"] -.->|Unblocks| CM
@@ -79,7 +96,10 @@ sequenceDiagram
 
 ## 3. The High Council (Orchestration at Scale)
 
-### 🧙‍♂️ The Grandmaster (Org Orchestrator)
+### 3.1 Org-Facing Agents (Top-Down)
+These agents serve the Organization and the Grandmaster.
+
+#### 🧙‍♂️ The Grandmaster (Org Orchestrator)
 **Analogy**: The Guild Leader.
 **Scope**: The entire 40-person Org (All Chapters).
 **Responsibilities**:
@@ -90,7 +110,7 @@ sequenceDiagram
 
 ### 🔭 The Herald (Talent Spotter)
 **Analogy**: The Royal Scout.
-**Focus**: Organizational Design & Capacity Planning.
+**Focus**: Organizational Design & Capacity Planning. (**Dual Mode**: Also serves as your **Mentor** for career growth).
 **Responsibilities**:
 - **Dynamic Reteaming**: Suggests when a Chapter has become too large (12+ people) and should undergo mitosis.
 - **Resource Draft**: "Chapter Payments is drowning. I recommend moving 2 Paladins from Chapter Search for 1 Sprint."
@@ -117,15 +137,30 @@ sequenceDiagram
 
 ### 📜 The Scribe (Knowledge & Culture)
 **Analogy**: Keeper of the Great Library.
-**Problem Solved**: "I didn't know Team C already fixed that bug."
+**Scope**: **Organization-wide knowledge**.
 **Capabilities**:
 - **The Chronicle**: Automatically summarizes decisions from Slack/Meetings into the Guild Wiki.
 - **Newblood Training**: Onboards new hires by answering questions from the "Ancient Scrolls" (RAG).
-- **Prompt Directive**: "Knowledge unshared is knowledge lost. Curate the wisdom of the Guild."
+
+### 3.2 Hero-Facing Agents (Bottom-Up) 🆕
+These agents serve the **Individual Developer (Hero)**, not the management. They empower Heroes through the [Hero's Toolkit](./docs/heros_toolkit.md).
+
+#### 🛡️ The Squire (Personal Assistant)
+**Analogy**: A knight's loyal page.
+**Scope**: **Personal productivity**.
+**Responsibilities**: Your dedicated hub for daily logistics, focus shielding, and coordinating with the specialists (Forge Master, Herald).
+
+#### ⚒️ Forge Master (The Sharpener)
+**Analogy**: The Guild's Master Craftsman.
+**Focus**: Technical Excellence. (**Dual Mode**: Serves as your **Weaponsmith** for code help and test generation).
+
+#### 🔭 The Herald (The Mentor)
+**Analogy**: The Guild Elder.
+**Focus**: Career Development. (**Dual Mode**: Serves as your **Mentor** for growth and brag docs).
 
 ---
 
-## 3. The Chapter (Squad Level)
+## 4. The Chapter (Squad Level)
 *Each "Squad" (e.g., Payments, Search, UI) is a Chapter with its own local agents.*
 
 ### ⚔️ The Chapter Master (Team Lead Proxy)

@@ -18,6 +18,9 @@ Real people. They have ultimate authority. They make decisions, write code, and 
 ## 🤖 The Agents (NPCs)
 AI constructs. They serve the Heroes. They have **NO** authority to override a human decision unless it violates a safety law (e.g., "Don't delete the database").
 
+### Org-Facing Agents (Top-Down)
+These agents serve organizational orchestration — helping leadership run the engineering org efficiently.
+
 | Agent Name | Role | Function | Human Counterpart |
 | :--- | :--- | :--- | :--- |
 | **The Grandmaster** | Org Orchestrator | Aggregates status, balances resources. Strategy. | *Engineering Director* |
@@ -30,6 +33,15 @@ AI constructs. They serve the Heroes. They have **NO** authority to override a h
 | **The Town Crier** | Public Liaison | Ingests bugs, de-duplicates, rates severity. | *Customer Support* |
 | **The Emissary** | Diplomat | Negotiates dependencies between teams. | *Program Manager* |
 | **The Sage** | Architect | Reviews design docs (RFCs) for patterns. | *Principal Engineer* |
+
+### Hero-Facing Agents (Bottom-Up) 🆕
+While all agents serve the Guild, **The Squire** is the only one dedicated solely to your personal quest. The other "Masters" of the Guild operate in **Context-Aware Dual Mode**—they automatically detect your identity and intent to switch between organizational oversight and personal assistance.
+
+| Agent Name | Role | Function | Fantasy Equivalent |
+| :--- | :--- | :--- | :--- |
+| **The Squire** | Personal Aide | Morning briefs, context loading, calendar blocking, standup prep. | *Your loyal page* |
+| **Forge Master** | Weaponsmith Mode | Tech support, code assistance, PR drafting, test generation. | *The master blacksmith* |
+| **The Herald** | Mentor Mode | Career growth, brag docs, skill tracking, stretch assignments. | *The guild elder* |
 
 ---
 
@@ -47,10 +59,16 @@ AI constructs. They serve the Heroes. They have **NO** authority to override a h
 *   Yes, **The Sentinel** can block a PR if tests fail.
 *   But a Human can always `!guild override`.
 
+### "How do I get help?" 🆕
+*   Use the unified **`!guild`** command for any request.
+*   **Code help?** `!guild explain this` (The Forge Master responds in Weaponsmith mode).
+*   **Career talk?** `!guild stretch` (The Herald responds in Mentor mode).
+*   **Logistics?** `!guild brief` (The Squire handles it).
+
 ---
 
 ## 🏗️ Functional Taxonomy (How they work)
-Your intuition is correct. The agents fall into 4 distinct functional categories:
+The agents fall into 5 distinct functional categories:
 
 ### 1. The Observers (Summarizers)
 *   **Behavior**: Passive, periodic, read-only. They digest vast amounts of info into brief summaries.
@@ -76,8 +94,17 @@ Your intuition is correct. The agents fall into 4 distinct functional categories
     *   **The Mason**: Infra Guard. Blocks Terraform changes that are too expensive or insecure.
     *   **The Forge Master**: Code Quality Guard. Blocks "Feature" work if "Tech Debt" is too high.
 
-### 4. The Creators (Humans)
+### 4. The Companions (Hero Assistants) 🆕
+*   **Behavior**: On-demand, conversational, supportive. They respond to Hero commands and provide personalized assistance.
+*   **Trigger**: Hero commands (`!squire`, `!smith`, `!mentor`).
+*   **Agents**:
+    *   **The Squire**: Personal assistant for scheduling, context, standups.
+    *   **The Weaponsmith**: Dev tooling for code, PRs, debugging.
+    *   **The Mentor**: Growth coaching for skills and career.
+
+### 5. The Creators (Humans)
 *   **Behavior**: Creative, decision-making, code-writing.
 *   **Trigger**: Intention.
 *   **Role**: You.
+
 
