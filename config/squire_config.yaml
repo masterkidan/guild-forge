@@ -1,0 +1,19 @@
+# Squire Configuration: The Aide
+# This defines parameters for individual developer support.
+
+worker:
+  type: "dispatch"
+  agent: "squire"
+  trigger: "hero:request"
+  
+  capabilities:
+    - name: "Context Loading"
+      source: ["azure-devops", "confluence"]
+    - name: "Focus Shielding"
+      target: "teams:status"
+    - name: "Standup Prep"
+      source: ["azure-devops:commits", "teams:messages"]
+
+  privacy:
+    level: "Hero-Only"
+    sharing: "Aggregated-Only"

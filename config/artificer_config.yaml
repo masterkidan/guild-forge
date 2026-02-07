@@ -1,0 +1,24 @@
+# Artificer Configuration: The Inventor
+# This defines parameters for R&D coordination and skunkworks tracking.
+
+worker:
+  type: "consolidate"
+  agent: "artificer"
+  schedule: "cron:0 15 * * 5" # Friday at 3:00 PM (Demo Prep)
+  
+  sources:
+    - type: "teams"
+      channel: "Skunkworks"
+    - type: "azure-devops"
+      projects: ["Innovation-Lab"]
+
+  workflow:
+    - step: "Identify Prototypes"
+      task: "List all new prototypes developed this week."
+    - step: "Organize Demo"
+      task: "Create a schedule for the Guild Fair (Demos)."
+
+  output:
+    destination:
+      - type: "teams"
+        channel: "The Workshop"

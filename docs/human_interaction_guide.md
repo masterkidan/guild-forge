@@ -2,6 +2,9 @@
 
 Welcome, Hero. This guide explains how to interact with the Agents of the Grand Guild (`!guild`).
 
+> [!NOTE]
+> For the technical mapping of these commands to the underlying **claude-flow** engine, see the [Command Codex](file:///Users/mukundankidambi/guild-forge/guild-forge/docs/infrastructure/command_mapping.md).
+
 ## 1. Getting Work (The Quest Board)
 Instead of fishing through Jira, you ask the **Quartermaster**.
 

@@ -1,0 +1,24 @@
+# Forge Master Configuration: The Sharpener
+# This defines parameters for technical debt and developer assistance.
+
+worker:
+  type: "audit"
+  agent: "forge_master"
+  schedule: "cron:0 9 * * 3" # Wednesday at 9:00 AM (Mid-Sprint Debt Audit)
+  
+  sources:
+    - type: "azure-devops"
+      metric: "code-churn", "technical-debt-labels"
+
+  dual_mode:
+    org_mode:
+      action: "populate-rust-log"
+      target: "azure-devops:backlog"
+    hero_mode:
+      action: "assist-hero"
+      commands: ["explain", "test", "pr", "debug"]
+
+  output:
+    destination:
+      - type: "teams"
+        channel: "The Forge"

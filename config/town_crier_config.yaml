@@ -1,0 +1,24 @@
+# Town Crier Configuration: The Messenger
+# This defines parameters for public feedback and bug triaging.
+
+worker:
+  type: "consolidate"
+  agent: "town-crier"
+  trigger: "teams:mention-town-crier"
+  
+  sources:
+    - type: "teams"
+      channel: "Public Feedback"
+    - type: "azure-devops"
+      work_items: "Bug"
+
+  workflow:
+    - step: "De-duplicate"
+      task: "Check recently reported bugs for similarities."
+    - step: "Severity Rating"
+      task: "Rate bug based on impact and frequency."
+
+  output:
+    destination:
+      - type: "teams"
+        channel: "Town Square"

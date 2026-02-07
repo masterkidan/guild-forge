@@ -1,0 +1,25 @@
+# Ranger Configuration: The Monitor
+# This defines parameters for system health and automated alerting.
+
+worker:
+  type: "audit"
+  agent: "ranger"
+  schedule: "interval:5m" # Check every 5 minutes
+  
+  sources:
+    - type: "azure-devops"
+      metric: "pipeline-status"
+    - type: "custom-mcp"
+      name: "prometheus-mcp"
+      metric: "error-rate"
+
+  failure_modes:
+    - condition: "error-rate > 5%"
+      alert_level: "Red Flare"
+      action: "summon:investigator"
+    - condition: "pipeline-status == 'failed'"
+      alert_level: "Amber Alert"
+      action: "notify-manager"
+
+notifications:
+  channel: "Ranger Station"

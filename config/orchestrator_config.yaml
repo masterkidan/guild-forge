@@ -1,0 +1,24 @@
+# Orchestrator Configuration: The Guild Master
+# This defines parameters for supreme orchestration and delegation.
+
+worker:
+  type: "dispatch"
+  agent: "orchestrator"
+  mode: "master-orchestrator"
+  
+  directives:
+    - name: "Delegation First"
+      rule: "Assign tasks to correct chapters before self-solving."
+    - name: "PII Shield"
+      rule: "Route all untrusted data through anonymization worker."
+
+  swarms:
+    - chapter: "High Council"
+      capability: ["strategy", "planning"]
+    - chapter: "Foundation"
+      capability: ["quality", "infra"]
+
+  output:
+    destination:
+      - type: "teams"
+        channel: "Grand Council"

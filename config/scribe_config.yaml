@@ -1,0 +1,40 @@
+# Scribe Configuration: The Daily Chronicle
+# This defines the parameters for the Scribe's automated summarization.
+
+worker:
+  type: "consolidate"
+  agent: "scribe"
+  schedule: "cron:0 8 * * 1-5" # 8:00 AM, Monday to Friday
+  
+  sources:
+    - type: "teams"
+      channels: ["Engineering General", "Announcements", "Product Roadmap"]
+      lookback: "24h"
+    - type: "azure-devops"
+      projects: ["GuildForge"]
+      events: ["pr-opened", "pr-merged", "commit"]
+    - type: "jira"
+      projects: ["GF"]
+      status_changes: true
+
+  output:
+    template: |
+      # 📜 The Daily Chronicle: {{date}}
+      
+      ## 🏛️ Strategic Summary (What happened)
+      {{summary.strategic}}
+      
+      ## ⚔️ The Front Lines (PRs & Code)
+      {{summary.technical}}
+      
+      ## ⚠️ Gathering Clouds (Potential Blockers)
+      {{summary.blockers}}
+      
+      ## 🗺️ Path Forward (Today's Quests)
+      {{summary.today}}
+    
+    destination:
+      - type: "teams"
+        channel: "Guild Hall"
+      - type: "confluence"
+        page: "Guild Chronicles"

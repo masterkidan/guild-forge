@@ -1,0 +1,25 @@
+# Sentinel Configuration: The Guardian
+# This defines parameters for PR blocking and quality gates.
+
+worker:
+  type: "audit"
+  agent: "sentinel"
+  trigger: "azure-devops:pr-opened"
+  
+  audit_targets:
+    - name: "Test Coverage"
+      source: "azure-devops"
+      metric: "line-coverage"
+      threshold: "< 80%"
+      action: "block-pr"
+    
+    - name: "Linting Compliance"
+      source: "azure-devops"
+      metric: "lint-errors"
+      threshold: "> 0"
+      action: "request-changes"
+
+  notifications:
+    channel: "Quality Guard"
+    priority:
+      high: ["coverage-drop", "blocking-failure"]

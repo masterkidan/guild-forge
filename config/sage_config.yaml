@@ -1,0 +1,24 @@
+# Sage Configuration: The Architect
+# This defines parameters for design reviews and architectural governance.
+
+worker:
+  type: "audit"
+  agent: "sage"
+  trigger: "azure-devops:design-doc-uploaded"
+  
+  sources:
+    - type: "confluence"
+      space: "ARCH"
+    - type: "azure-devops"
+      wiki: "Design Docs"
+
+  audit_targets:
+    - name: "Pattern Compliance"
+      task: "Check for anti-patterns or violations of ADRs."
+    - name: "Scalability Audit"
+      task: "Verify that proposed design handles 10x current load."
+
+  output:
+    destination:
+      - type: "teams"
+        channel: "The Great Library"

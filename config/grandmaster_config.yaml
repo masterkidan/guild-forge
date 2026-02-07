@@ -1,0 +1,42 @@
+# Grandmaster Configuration: The Weekly Convocation
+# This defines the parameters for the high-level organizational status report.
+
+worker:
+  type: "dispatch"
+  agent: "grandmaster"
+  schedule: "cron:0 16 * * 5" # Friday at 4:00 PM (End of Week)
+  
+  workflow:
+    - step: "Aggregate Chapter Summaries"
+      agent: "scribe"
+      task: "Gather summaries from all chapters for the past 5 days."
+    
+    - step: "Analyze Org Health"
+      agent: "herald"
+      task: "Check capacity vs. edicts. Identify any talent threats."
+    
+    - step: "Draft Strategic Edict"
+      agent: "grandmaster"
+      task: "Synthesize scribe and herald reports into a strategic leadership update."
+
+  output:
+    template: |
+      # 🏛️ The Weekly Convocation: Strategic Update
+      
+      ## 📜 State of the Guild (Executive Summary)
+      {{grandmaster.strategic_summary}}
+      
+      ## 🛡️ Chapter Health (Squad Status)
+      {{scribe.chapter_breakdown}}
+      
+      ## 🔭 Talent & Capacity (Scout Report)
+      {{herald.org_health}}
+      
+      ## ⚔️ Urgent Quests (Priority Action Items)
+      {{grandmaster.action_items}}
+
+    destination:
+      - type: "email"
+        to: "manager-inbox@company.com"
+      - type: "teams"
+        channel: "Guild High Council"

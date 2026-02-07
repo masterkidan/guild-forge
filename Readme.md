@@ -139,7 +139,7 @@ These agents serve the Organization and the Grandmaster.
 **Analogy**: Keeper of the Great Library.
 **Scope**: **Organization-wide knowledge**.
 **Capabilities**:
-- **The Chronicle**: Automatically summarizes decisions from Slack/Meetings into the Guild Wiki.
+- **The Chronicle**: Automatically summarizes decisions from Teams/Meetings into the Guild Wiki.
 - **Newblood Training**: Onboards new hires by answering questions from the "Ancient Scrolls" (RAG).
 
 ### 3.2 Hero-Facing Agents (Bottom-Up) 🆕

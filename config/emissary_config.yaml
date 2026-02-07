@@ -1,0 +1,23 @@
+# Emissary Configuration: The Diplomat
+# This defines parameters for cross-team dependency management.
+
+worker:
+  type: "dispatch"
+  agent: "emissary"
+  schedule: "cron:0 14 * * 2,4" # Tuesday/Thursday at 2:00 PM
+  
+  sources:
+    - type: "azure-devops"
+      projects: ["*"] # Scan all projects
+      links: ["Blocked By", "Depends On"]
+
+  workflow:
+    - step: "Map Dependencies"
+      task: "Identify cross-chapter blockers."
+    - step: "Negotiate Timelines"
+      task: "Check if blocking teams have the blocked item in their sprint."
+
+  output:
+    destination:
+      - type: "teams"
+        channel: "Embassy"

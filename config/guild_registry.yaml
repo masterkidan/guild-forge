@@ -1,0 +1,162 @@
+# Guild Forge Registry for Claude-Flow
+# This file defines the agents and their specific roles within the orchestration engine.
+
+agents:
+  # --- Leadership & Orchestration ---
+
+  orchestrator:
+    name: "The Orchestrator"
+    role: "Supreme Orchestrator"
+    analogy: "The Guild Master"
+    prompts: "./prompts/orchestrator.md"
+    capabilities: ["delegation", "pii-masking", "swarm-coordination"]
+    config: "./config/orchestrator_config.yaml"
+
+  grandmaster:
+    name: "The Grandmaster"
+    role: "Org Orchestrator"
+    analogy: "The Guild Leader"
+    prompts: "./prompts/grandmaster.md"
+    capabilities: ["strategy", "planning", "resource-allocation"]
+    mode: "queen"
+    config: "./config/grandmaster_config.yaml"
+
+  # --- Planning & Talent ---
+
+  quartermaster:
+    name: "The Quartermaster"
+    role: "Planner & Logistics"
+    analogy: "The Quest Giver"
+    prompts: "./prompts/quartermaster.md"
+    capabilities: ["planning", "velocity-tracking", "assignment"]
+    config: "./config/quartermaster_config.yaml"
+
+  herald:
+    name: "The Herald"
+    role: "Talent Scout / Mentor"
+    analogy: "The Royal Scout"
+    prompts: "./prompts/herald.md"
+    capabilities: ["audit", "capacity", "career-growth"]
+    config: "./config/herald_config.yaml"
+    dual_mode:
+      hero_mode: "mentor"
+      hero_commands: ["stretch", "brag", "skills"]
+
+  # --- Quality & Guard ---
+
+  sentinel:
+    name: "The Sentinel"
+    role: "Guardian"
+    analogy: "The Quality Guard"
+    prompts: "./prompts/sentinel.md"
+    capabilities: ["pr-blocking", "quality-assurance"]
+    config: "./config/sentinel_config.yaml"
+
+  forge_master:
+    name: "The Forge Master"
+    role: "Tech Lead / Weaponsmith"
+    analogy: "The Master of the Works"
+    prompts: "./prompts/forge_master.md"
+    capabilities: ["debt-audit", "refactoring", "code-help"]
+    config: "./config/forge_master_config.yaml"
+    dual_mode:
+      hero_mode: "weaponsmith"
+      hero_commands: ["explain", "test", "debug", "pr"]
+
+  mason:
+    name: "The Mason"
+    role: "Platform / Infra"
+    analogy: "The Builder"
+    prompts: "./prompts/mason.md"
+    capabilities: ["infra-guard", "terraform-audit"]
+    config: "./config/mason_config.yaml"
+
+  # --- Operations & Monitoring ---
+
+  ranger:
+    name: "The Ranger"
+    role: "Automated Monitor"
+    analogy: "The Scout"
+    prompts: "./prompts/ranger.md"
+    capabilities: ["log-monitoring", "alerting"]
+    config: "./config/ranger_config.yaml"
+
+  investigator:
+    name: "The Investigator"
+    role: "Forensic Mage"
+    analogy: "RCA Specialist"
+    prompts: "./prompts/investigator.md"
+    capabilities: ["incident-learning", "post-mortems"]
+    config: "./config/investigator_config.yaml"
+
+  # --- Documentation & Community ---
+
+  scribe:
+    name: "The Scribe"
+    role: "Librarian / Chronicler"
+    analogy: "Keeper of the Library"
+    prompts: "./prompts/scribe.md"
+    capabilities: ["documentation", "summarization"]
+    config: "./config/scribe_config.yaml"
+
+  town_crier:
+    name: "The Town Crier"
+    role: "Public Liaison"
+    analogy: "The Messenger"
+    prompts: "./prompts/town_crier.md"
+    capabilities: ["bug-triaging", "severity-rating"]
+    config: "./config/town_crier_config.yaml"
+
+  # --- Support & Strategy ---
+
+  emissary:
+    name: "The Emissary"
+    role: "Diplomat"
+    analogy: "The Envoy"
+    prompts: "./prompts/emissary.md"
+    capabilities: ["dependency-negotiation", "unblocking"]
+    config: "./config/emissary_config.yaml"
+
+  sage:
+    name: "The Sage"
+    role: "Architect"
+    analogy: "The Wizard"
+    prompts: "./prompts/sage.md"
+    capabilities: ["design-review", "rfc-audit"]
+    config: "./config/sage_config.yaml"
+
+  artificer:
+    name: "The Artificer"
+    role: "Innovation & Demos"
+    analogy: "The Inventor"
+    prompts: "./prompts/artificer.md"
+    capabilities: ["rd-coordination", "demo-organization"]
+    config: "./config/artificer_config.yaml"
+
+  # --- Personal Assistant ---
+
+  squire:
+    name: "The Squire"
+    role: "Personal Aide"
+    analogy: "The Loyal Page"
+    prompts: "./prompts/squire.md"
+    capabilities: ["logistics", "context", "standup"]
+    config: "./config/squire_config.yaml"
+
+chapters:
+  - name: "High Council"
+    master: "orchestrator"
+    members: ["grandmaster", "herald", "sage", "emissary"]
+  - name: "Foundation"
+    master: "mason"
+    members: ["sentinel", "ranger", "forge_master", "investigator"]
+  - name: "Chronicle"
+    master: "scribe"
+    members: ["town_crier", "artificer"]
+
+# Integrated MCP Configuration
+mcp:
+  required_servers:
+    - name: "jira-mcp"
+    - name: "teams-mcp"
+    - name: "azure-devops-mcp"

@@ -1,0 +1,19 @@
+# Mason Configuration: The Builder
+# This defines parameters for infrastructure and platform health.
+
+worker:
+  type: "audit"
+  agent: "mason"
+  trigger: "azure-devops:terraform-change"
+  
+  audit_targets:
+    - name: "Cost Guard"
+      task: "Estimate cloud cost increase for proposed changes."
+      threshold: "> $100/mo alert"
+    - name: "Security Compliance"
+      task: "Check for public S3 buckets, open security groups, etc."
+
+  output:
+    destination:
+      - type: "teams"
+        channel: "Foundation Watch"

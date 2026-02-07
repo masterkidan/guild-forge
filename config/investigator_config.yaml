@@ -1,0 +1,22 @@
+# Investigator Configuration: The Forensic Mage
+# This defines parameters for incident post-mortems and learning.
+
+worker:
+  type: "dispatch"
+  agent: "investigator"
+  trigger: "ranger:incident-resolved"
+  
+  workflow:
+    - step: "Responder Interviews"
+      task: "Automated DM to responders for timeline and context."
+    - step: "Root Cause Discovery"
+      task: "Analyze logs and interviews to identify systemic failures."
+    - step: "Draft Post-Mortem"
+      task: "Create a blameless inquest report."
+
+  output:
+    destination:
+      - type: "teams"
+        channel: "The Inquest"
+      - type: "confluence"
+        page: "Incidents/Post-Mortems"

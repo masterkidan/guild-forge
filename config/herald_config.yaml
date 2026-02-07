@@ -1,0 +1,32 @@
+# Herald Configuration: The Scout
+# This defines the parameters for capacity audit and burnout alerts.
+
+worker:
+  type: "audit"
+  agent: "herald"
+  schedule: "cron:0 10 * * 1" # Monday at 10:00 AM (Post-Weekend Review)
+  
+  audit_targets:
+    - name: "Development Velocity"
+      source: "jira"
+      metric: "cycle_time"
+      threshold: "avg + 50%" # Alert if cycle time spikes by 50%
+      action: "notify-manager"
+
+    - name: "Burnout Risk"
+      source: "azure-devops"
+      metric: "out-of-hours-commits"
+      threshold: "> 5 per week"
+      action: "notify-manager"
+
+    - name: "Squad Imbalance"
+      source: "jira"
+      metric: "unassigned-vs-assigned-ratio"
+      threshold: "> 0.4"
+      action: "suggest-mitosis"
+
+notifications:
+  channel: "#guild-leadership"
+  priority:
+    high: ["strategic-threat", "extreme-burnout"]
+    medium: ["velocity-dip", "resource-imbalance"]

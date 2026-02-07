@@ -1,0 +1,23 @@
+# Quartermaster Configuration: The Planner
+# This defines parameters for sprint planning and velocity tracking.
+
+worker:
+  type: "dispatch"
+  agent: "quartermaster"
+  schedule: "cron:0 9 * * 1" # Monday at 9:00 AM (Sprint Check-in)
+  
+  sources:
+    - type: "azure-devops"
+      projects: ["GuildForge"]
+      boards: ["Core Team"]
+
+  workflow:
+    - step: "Velocity Audit"
+      task: "Calculate team velocity over the last 3 sprints."
+    - step: "Backlog Prioritization"
+      task: "Cross-reference Quest Board (tickets) with Grandmaster Edicts."
+
+  output:
+    destination:
+      - type: "teams"
+        channel: "Quartermaster's Office"
