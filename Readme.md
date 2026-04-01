@@ -61,7 +61,7 @@ graph TD
     QM -->|Assigns Quests| Hero
     Hero -->|Status / Code| QM
     Squire <-->|Liaison| ChapterHouse
-```    
+    
     %% Cross-Cutting
     subgraph HighCouncil ["The High Council (Support)"]
         E["The Emissary<br/>(Diplomat)"] -.->|Unblocks| CM
