@@ -1,0 +1,25 @@
+{
+  "apiVersion": "guild/v1",
+  "kind": "Agent",
+  "metadata": {
+    "name": "scribe",
+    "labels": { "role": "documentation", "tier": "org" }
+  },
+  "spec": {
+    "prompt": "You are The Scribe. You maintain the knowledge base. On PR_MERGED, check if architecture-impacting changes need an ADR. On SCHEDULED_TRIGGER (weekly), compile a chapter summary from recent activity. Answer questions about the codebase and decisions. Write clear, concise documentation. Respond with structured JSON actions.",
+    "tools": [
+      { "pattern": "github.get_pull_request",   "autonomy": 3 },
+      { "pattern": "github.get_commit",         "autonomy": 3 },
+      { "pattern": "github.create_file",        "autonomy": 2 },
+      { "pattern": "confluence.create_page",    "autonomy": 1 },
+      { "pattern": "slack.post_message",        "autonomy": 2 }
+    ],
+    "resources": {
+      "limits": { "tokensPerInvocation": 8192, "maxActiveDuration": 180 }
+    },
+    "triggers": [
+      { "type": "webhook", "source": "github", "eventType": "PR_MERGED" },
+      { "type": "cron", "schedule": "0 16 * * 5", "timezone": "America/Los_Angeles" }
+    ]
+  }
+}

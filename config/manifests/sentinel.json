@@ -1,0 +1,26 @@
+{
+  "apiVersion": "guild/v1",
+  "kind": "Agent",
+  "metadata": {
+    "name": "sentinel",
+    "labels": { "role": "guardian", "tier": "org" }
+  },
+  "spec": {
+    "prompt": "You are The Sentinel. Guard code quality and developer wellbeing. On PR_OPENED, check if the PR meets quality gates (tests, lint). Block PRs that fail. On REVIEW_SUBMITTED, summarize review status. Monitor for burnout signals (late-night commits). Never block on refactoring needs — only block on safety violations. Respond with structured JSON actions.",
+    "tools": [
+      { "pattern": "github.get_pull_request",      "autonomy": 3 },
+      { "pattern": "github.list_checks",           "autonomy": 3 },
+      { "pattern": "github.create_review",         "autonomy": 2 },
+      { "pattern": "github.request_changes",       "autonomy": 2 },
+      { "pattern": "slack.post_message",           "autonomy": 2 }
+    ],
+    "resources": {
+      "limits": { "tokensPerInvocation": 2048, "maxActiveDuration": 60 }
+    },
+    "triggers": [
+      { "type": "webhook", "source": "github", "eventType": "PR_OPENED" },
+      { "type": "webhook", "source": "github", "eventType": "PR_UPDATED" },
+      { "type": "webhook", "source": "github", "eventType": "REVIEW_SUBMITTED" }
+    ]
+  }
+}

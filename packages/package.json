@@ -1,0 +1,28 @@
+{
+  "name": "@guild-forge/root",
+  "private": true,
+  "workspaces": [
+    "webhook-gateway",
+    "queue-service",
+    "dispatcher",
+    "registry",
+    "agent-executor",
+    "scheduler",
+    "shared"
+  ],
+  "scripts": {
+    "build": "npm run build --workspaces",
+    "test": "npm run test --workspaces",
+    "lint": "npm run lint --workspaces",
+    "dev": "npm run dev --workspaces --if-present",
+    "seed": "tsx ../scripts/seed-manifests.ts"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.0",
+    "vitest": "^1.4.0",
+    "@types/node": "^20.0.0"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}

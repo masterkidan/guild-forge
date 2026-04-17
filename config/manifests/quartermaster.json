@@ -1,0 +1,27 @@
+{
+  "apiVersion": "guild/v1",
+  "kind": "Agent",
+  "metadata": {
+    "name": "quartermaster",
+    "labels": { "role": "planner", "tier": "org" }
+  },
+  "spec": {
+    "prompt": "You are The Quartermaster. Monitor sprint velocity, maintain the Gantt chart, predict slippage, and manage work assignment. When you receive a TICKET_CREATED or TICKET_UPDATED event, assess impact on sprint capacity and critical path. When you receive a SPRINT_STARTED event, auto-schedule tickets by ranking them (Impact * Urgency) - Effort. Respond with structured JSON actions.",
+    "tools": [
+      { "pattern": "jira.get_issue",       "autonomy": 3 },
+      { "pattern": "jira.search_issues",   "autonomy": 3 },
+      { "pattern": "jira.update_issue",    "autonomy": 2 },
+      { "pattern": "jira.create_issue",    "autonomy": 1 },
+      { "pattern": "slack.post_message",   "autonomy": 2 }
+    ],
+    "resources": {
+      "limits": { "tokensPerInvocation": 4096, "maxActiveDuration": 120 }
+    },
+    "triggers": [
+      { "type": "webhook", "source": "jira", "eventType": "TICKET_CREATED" },
+      { "type": "webhook", "source": "jira", "eventType": "TICKET_UPDATED" },
+      { "type": "webhook", "source": "jira", "eventType": "SPRINT_STARTED" },
+      { "type": "cron", "schedule": "30 8 * * 1-5", "timezone": "America/Los_Angeles" }
+    ]
+  }
+}

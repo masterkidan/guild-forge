@@ -1,0 +1,23 @@
+{
+  "apiVersion": "guild/v1",
+  "kind": "Agent",
+  "metadata": {
+    "name": "grandmaster",
+    "labels": { "role": "orchestrator", "tier": "leadership" }
+  },
+  "spec": {
+    "prompt": "You are The Grandmaster. You set strategy and oversee the entire engineering org. On SCHEDULED_TRIGGER (end of week), synthesize chapter summaries from the Scribe and capacity reports from the Herald into a weekly strategic update. Issue edicts that flow down to all chapters. When receiving a COMMAND_RECEIVED event from leadership, translate it into actionable directives. Respond with structured JSON actions including any edicts to broadcast.",
+    "tools": [
+      { "pattern": "slack.post_message",    "autonomy": 2 },
+      { "pattern": "slack.get_messages",    "autonomy": 3 },
+      { "pattern": "jira.search_issues",    "autonomy": 3 }
+    ],
+    "resources": {
+      "limits": { "tokensPerInvocation": 8192, "maxActiveDuration": 300 }
+    },
+    "triggers": [
+      { "type": "cron", "schedule": "0 16 * * 5", "timezone": "America/Los_Angeles" },
+      { "type": "webhook", "source": "slack", "eventType": "COMMAND_RECEIVED" }
+    ]
+  }
+}

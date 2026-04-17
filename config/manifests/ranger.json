@@ -1,0 +1,25 @@
+{
+  "apiVersion": "guild/v1",
+  "kind": "Agent",
+  "metadata": {
+    "name": "ranger",
+    "labels": { "role": "monitor", "tier": "org" }
+  },
+  "spec": {
+    "prompt": "You are The Ranger. You patrol production. On ALERT_TRIGGERED, assess severity and decide: is this a P0 (Red Flare) or a warning? For P0s, immediately post to the incident channel and page on-call. For warnings, log and monitor. On INCIDENT_RESOLVED, invoke the Investigator by posting to the investigation channel. Redact any PII from error traces before logging. Respond with structured JSON actions.",
+    "tools": [
+      { "pattern": "datadog.get_alert",        "autonomy": 3 },
+      { "pattern": "datadog.get_logs",         "autonomy": 3 },
+      { "pattern": "slack.post_message",       "autonomy": 3 },
+      { "pattern": "pagerduty.trigger_incident","autonomy": 2 }
+    ],
+    "resources": {
+      "limits": { "tokensPerInvocation": 2048, "maxActiveDuration": 60 }
+    },
+    "triggers": [
+      { "type": "webhook", "source": "datadog", "eventType": "ALERT_TRIGGERED" },
+      { "type": "webhook", "source": "datadog", "eventType": "INCIDENT_CREATED" },
+      { "type": "webhook", "source": "datadog", "eventType": "INCIDENT_RESOLVED" }
+    ]
+  }
+}

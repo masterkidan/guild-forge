@@ -1,0 +1,111 @@
+services:
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: guild
+      POSTGRES_PASSWORD: guild
+      POSTGRES_DB: guild
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U guild"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  queue-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.service
+      args:
+        SERVICE: queue-service
+    environment:
+      PORT: "8080"
+      DATABASE_URL: "postgres://guild:guild@postgres:5432/guild"
+      POOL_SIZE: "10"
+    ports:
+      - "3001:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  registry:
+    build:
+      context: .
+      dockerfile: Dockerfile.service
+      args:
+        SERVICE: registry
+    environment:
+      PORT: "8080"
+      DATABASE_URL: "postgres://guild:guild@postgres:5432/guild"
+    ports:
+      - "3002:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  webhook-gateway:
+    build:
+      context: .
+      dockerfile: Dockerfile.service
+      args:
+        SERVICE: webhook-gateway
+    environment:
+      PORT: "8080"
+      QUEUE_SERVICE_URL: "http://queue-service:8080"
+    ports:
+      - "3000:8080"
+    depends_on:
+      - queue-service
+
+  dispatcher:
+    build:
+      context: .
+      dockerfile: Dockerfile.service
+      args:
+        SERVICE: dispatcher
+    environment:
+      QUEUE_SERVICE_URL: "http://queue-service:8080"
+      REGISTRY_URL: "http://registry:8080"
+      POLL_INTERVAL_MS: "1000"
+    depends_on:
+      - queue-service
+      - registry
+
+  scheduler:
+    build:
+      context: .
+      dockerfile: Dockerfile.service
+      args:
+        SERVICE: scheduler
+    environment:
+      QUEUE_SERVICE_URL: "http://queue-service:8080"
+      REGISTRY_URL: "http://registry:8080"
+      REFRESH_INTERVAL_MS: "300000"
+    depends_on:
+      - queue-service
+      - registry
+
+  agent-executor:
+    build:
+      context: .
+      dockerfile: Dockerfile.service
+      args:
+        SERVICE: agent-executor
+    environment:
+      QUEUE_SERVICE_URL: "http://queue-service:8080"
+      REGISTRY_URL: "http://registry:8080"
+      ANTHROPIC_API_KEY: "${ANTHROPIC_API_KEY}"
+      AGENT_QUEUES: "quartermaster:__global,sentinel:__global,ranger:__global,scribe:__global,grandmaster:__global"
+      # JSON array of MCP servers — uncomment and extend as integrations are added:
+      # MCP_SERVERS: '[{"name":"jira","url":"http://jira-mcp:3000"},{"name":"github","url":"http://github-mcp:3000"},{"name":"slack","url":"http://slack-mcp:3000"}]'
+      POLL_INTERVAL_MS: "1000"
+    depends_on:
+      - queue-service
+      - registry
+
+volumes:
+  postgres_data:
