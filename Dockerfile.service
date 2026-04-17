@@ -2,17 +2,18 @@ FROM oven/bun:1-alpine
 
 ARG SERVICE
 
-WORKDIR /app
-
-# Copy workspace root manifest (defines workspaces array)
-COPY packages/package.json ./packages/
-
-# Copy shared package and the target service
-COPY packages/shared ./packages/shared/
-COPY packages/${SERVICE} ./packages/${SERVICE}/
-
-# Install from workspace root so Bun resolves @guild-forge/shared as a local link
 WORKDIR /app/packages
+
+# Copy only the two packages needed — shared (workspace dep) and the target service
+COPY packages/shared ./shared/
+COPY packages/${SERVICE} ./${SERVICE}/
+
+# Write a minimal workspace root that only references what's present.
+# The full packages/package.json lists all 7 services; Bun errors on any
+# workspace entry whose directory doesn't exist in the build context.
+RUN echo "{\"name\":\"@guild-forge/root\",\"private\":true,\"workspaces\":[\"shared\",\"${SERVICE}\"]}" \
+    > /app/packages/package.json
+
 RUN bun install
 
 ENV NODE_ENV=production
