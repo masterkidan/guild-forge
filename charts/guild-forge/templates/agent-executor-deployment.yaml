@@ -1,0 +1,45 @@
+{{- if .Values.agentExecutor.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "guild-forge.fullname" . }}-agent-executor
+  labels:
+    {{- include "guild-forge.labels" . | nindent 4 }}
+    app.kubernetes.io/component: agent-executor
+spec:
+  replicas: {{ .Values.agentExecutor.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "guild-forge.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: agent-executor
+  template:
+    metadata:
+      labels:
+        {{- include "guild-forge.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: agent-executor
+    spec:
+      containers:
+        - name: agent-executor
+          image: "{{ .Values.agentExecutor.image.repository }}:{{ .Values.imageTag }}"
+          imagePullPolicy: {{ .Values.imagePullPolicy }}
+          env:
+            - name: QUEUE_SERVICE_URL
+              value: {{ include "guild-forge.queueServiceUrl" . | quote }}
+            - name: REGISTRY_URL
+              value: {{ include "guild-forge.registryUrl" . | quote }}
+            - name: AGENT_QUEUES
+              value: {{ .Values.agentExecutor.config.agentQueues | quote }}
+            - name: POLL_INTERVAL_MS
+              value: {{ .Values.agentExecutor.config.pollIntervalMs | quote }}
+            {{- if .Values.agentExecutor.config.mcpServers }}
+            - name: MCP_SERVERS
+              value: {{ .Values.agentExecutor.config.mcpServers | quote }}
+            {{- end }}
+            - name: ANTHROPIC_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "guild-forge.fullname" . }}-secrets
+                  key: anthropicApiKey
+          resources:
+            {{- toYaml .Values.agentExecutor.resources | nindent 12 }}
+{{- end }}

@@ -1,0 +1,144 @@
+# Guild Forge Helm Values
+# Default configuration for local development (minikube / kind / k3d)
+
+global:
+  imageRegistry: ""
+  imagePullSecrets: []
+
+# PostgreSQL (Bitnami subchart)
+postgresql:
+  enabled: true
+  auth:
+    postgresPassword: "guild"
+    database: "guild"
+  primary:
+    persistence:
+      enabled: true
+      size: 1Gi
+    resources:
+      limits:
+        memory: 512Mi
+        cpu: 500m
+      requests:
+        memory: 256Mi
+        cpu: 100m
+
+# Shared image settings — override per-service image.repository if needed
+imageTag: "latest"
+imagePullPolicy: IfNotPresent
+
+# Queue Service
+queueService:
+  enabled: true
+  replicaCount: 1
+  image:
+    repository: guild-forge/queue-service
+  resources:
+    limits:
+      memory: 256Mi
+      cpu: 200m
+    requests:
+      memory: 128Mi
+      cpu: 50m
+  config:
+    poolSize: "10"
+    archiveCompletedAfterSeconds: "3600"
+
+# Webhook Gateway
+webhookGateway:
+  enabled: true
+  replicaCount: 1
+  image:
+    repository: guild-forge/webhook-gateway
+  resources:
+    limits:
+      memory: 256Mi
+      cpu: 200m
+    requests:
+      memory: 128Mi
+      cpu: 50m
+
+# Registry
+registry:
+  enabled: true
+  replicaCount: 1
+  image:
+    repository: guild-forge/registry
+  resources:
+    limits:
+      memory: 256Mi
+      cpu: 200m
+    requests:
+      memory: 128Mi
+      cpu: 50m
+
+# Dispatcher (worker — no HTTP server)
+dispatcher:
+  enabled: true
+  replicaCount: 1
+  image:
+    repository: guild-forge/dispatcher
+  resources:
+    limits:
+      memory: 256Mi
+      cpu: 200m
+    requests:
+      memory: 128Mi
+      cpu: 50m
+  config:
+    pollIntervalMs: "1000"
+
+# Scheduler
+scheduler:
+  enabled: true
+  replicaCount: 1
+  image:
+    repository: guild-forge/scheduler
+  resources:
+    limits:
+      memory: 128Mi
+      cpu: 100m
+    requests:
+      memory: 64Mi
+      cpu: 25m
+  config:
+    refreshIntervalMs: "300000"
+
+# Agent Executor
+agentExecutor:
+  enabled: true
+  replicaCount: 1
+  image:
+    repository: guild-forge/agent-executor
+  resources:
+    limits:
+      memory: 512Mi
+      cpu: 500m
+    requests:
+      memory: 256Mi
+      cpu: 100m
+  config:
+    pollIntervalMs: "1000"
+    # Comma-separated "name:chapter" pairs — must match seeded manifests
+    agentQueues: "quartermaster:__global,sentinel:__global,ranger:__global,scribe:__global,grandmaster:__global"
+    # JSON array of MCP servers: '[{"name":"jira","url":"http://..."}]'
+    mcpServers: ""
+
+# Seed Job — one-shot Job that loads agent manifests into the registry
+seedJob:
+  enabled: true
+  backoffLimit: 4
+
+# Ingress for the Webhook Gateway (disabled by default for local dev)
+ingress:
+  enabled: false
+  className: "nginx"
+  annotations: {}
+    # cert-manager.io/cluster-issuer: letsencrypt-prod
+  host: guild-forge.local
+  tls: false
+  tlsSecret: guild-forge-tls
+
+# Secrets — pass via --set or a separate values file; never commit real values
+secrets:
+  anthropicApiKey: ""

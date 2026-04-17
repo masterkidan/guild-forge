@@ -1,0 +1,68 @@
+{{- if .Values.queueService.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "guild-forge.fullname" . }}-queue-service
+  labels:
+    {{- include "guild-forge.labels" . | nindent 4 }}
+    app.kubernetes.io/component: queue-service
+spec:
+  replicas: {{ .Values.queueService.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "guild-forge.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: queue-service
+  template:
+    metadata:
+      labels:
+        {{- include "guild-forge.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: queue-service
+    spec:
+      containers:
+        - name: queue-service
+          image: "{{ .Values.queueService.image.repository }}:{{ .Values.imageTag }}"
+          imagePullPolicy: {{ .Values.imagePullPolicy }}
+          ports:
+            - name: http
+              containerPort: 8080
+          env:
+            - name: PORT
+              value: "8080"
+            - name: DATABASE_URL
+              value: {{ include "guild-forge.postgresUrl" . | quote }}
+            - name: POOL_SIZE
+              value: {{ .Values.queueService.config.poolSize | quote }}
+            - name: ARCHIVE_COMPLETED_AFTER_SECONDS
+              value: {{ .Values.queueService.config.archiveCompletedAfterSeconds | quote }}
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 15
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          resources:
+            {{- toYaml .Values.queueService.resources | nindent 12 }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "guild-forge.fullname" . }}-queue-service
+  labels:
+    {{- include "guild-forge.labels" . | nindent 4 }}
+    app.kubernetes.io/component: queue-service
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8080
+      targetPort: http
+      name: http
+  selector:
+    {{- include "guild-forge.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: queue-service
+{{- end }}

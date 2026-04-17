@@ -376,3 +376,188 @@ To forge this Guild, provide:
 1. **Guild Roster**: List of 40 users mapped to Chapters.
 2. **Chapter Charters**: What does each team own? (e.g., "Payments owns the Checkout flow").
 3. **The Map**: Jira Project Keys for each Chapter.
+
+---
+
+## 9. Running Guild Forge
+
+### Prerequisites
+
+| Tool | Version | Purpose |
+|------|---------|---------|
+| Node.js | ≥ 20 | Build packages |
+| Docker | ≥ 24 | Build images |
+| kubectl | ≥ 1.28 | Manage cluster |
+| Helm | ≥ 3.14 | Deploy chart |
+| minikube **or** kind | latest | Local Kubernetes |
+
+---
+
+### Option A — Docker Compose (quickest local dev)
+
+```bash
+# 1. Clone and install
+git clone https://github.com/masterkidan/guild-forge
+cd guild-forge
+
+# 2. Set your Anthropic API key
+export ANTHROPIC_API_KEY=sk-ant-...
+
+# 3. Start everything (Postgres + all 7 services)
+docker compose up --build
+
+# 4. Seed agent manifests (in a second terminal)
+REGISTRY_URL=http://localhost:3002 npx tsx scripts/seed-manifests.ts
+```
+
+**Endpoints (local):**
+| Service | URL |
+|---------|-----|
+| Webhook Gateway | `http://localhost:3000` |
+| Queue Service | `http://localhost:3001` |
+| Registry | `http://localhost:3002` |
+
+---
+
+### Option B — Local Kubernetes (minikube or kind)
+
+#### 1. Start your cluster
+
+```bash
+# minikube
+minikube start --cpus=4 --memory=4g
+
+# OR kind
+kind create cluster --name guild-forge
+```
+
+#### 2. Build & load images
+
+```bash
+# Build all 6 service images
+./scripts/build-images.sh
+
+# Load into minikube
+for svc in queue-service webhook-gateway registry dispatcher scheduler agent-executor; do
+  minikube image load guild-forge/$svc:latest
+done
+
+# OR load into kind
+for svc in queue-service webhook-gateway registry dispatcher scheduler agent-executor; do
+  kind load docker-image guild-forge/$svc:latest --name guild-forge
+done
+```
+
+#### 3. Add the Bitnami chart repo (PostgreSQL dependency)
+
+```bash
+helm repo add bitnami https://charts.bitnami.com/bitnami
+helm repo update
+helm dependency build ./charts/guild-forge
+```
+
+#### 4. Install with a single command
+
+```bash
+helm install guild-forge ./charts/guild-forge \
+  --namespace guild-forge \
+  --create-namespace \
+  --set secrets.anthropicApiKey="${ANTHROPIC_API_KEY}"
+```
+
+The seed Job runs automatically as a Helm post-install hook and loads all five core agent manifests (Grandmaster, Quartermaster, Sentinel, Ranger, Scribe) into the registry.
+
+#### 5. Check rollout
+
+```bash
+kubectl -n guild-forge get pods -w
+```
+
+All pods should reach `Running` within ~60 seconds (Postgres takes longest).
+
+#### 6. Send a test webhook
+
+```bash
+# Port-forward the webhook gateway
+kubectl -n guild-forge port-forward svc/guild-forge-webhook-gateway 3000:8080
+
+# Send a fake Jira event
+curl -s -X POST http://localhost:3000/webhooks/jira?chapter=platform-team \
+  -H "Content-Type: application/json" \
+  -d '{
+    "webhookEvent": "jira:issue_created",
+    "issue": {
+      "key": "PLAT-42",
+      "fields": {
+        "summary": "Implement rate limiting on checkout API",
+        "status": { "name": "To Do" },
+        "assignee": { "displayName": "Sarah" }
+      }
+    }
+  }'
+# → {"eventId":"...","correlationId":"..."}
+```
+
+The event flows: Webhook Gateway → Queue → Dispatcher → `guild.agents.quartermaster.__global` → Agent Executor (calls Claude) → result logged.
+
+---
+
+### Upgrading / Redeploying
+
+```bash
+# After rebuilding images
+./scripts/build-images.sh
+minikube image load guild-forge/agent-executor:latest   # reload changed image
+
+helm upgrade guild-forge ./charts/guild-forge \
+  --namespace guild-forge \
+  --set secrets.anthropicApiKey="${ANTHROPIC_API_KEY}"
+```
+
+### Connecting MCP Servers
+
+To give agents real tool access, add your MCP servers to the executor:
+
+```bash
+helm upgrade guild-forge ./charts/guild-forge \
+  --namespace guild-forge \
+  --set secrets.anthropicApiKey="${ANTHROPIC_API_KEY}" \
+  --set agentExecutor.config.mcpServers='[{"name":"jira","url":"http://jira-mcp.guild-forge:3000"},{"name":"github","url":"http://github-mcp.guild-forge:3000"}]'
+```
+
+### Exposing Webhooks Externally
+
+Enable the Ingress (requires nginx ingress controller):
+
+```bash
+# minikube
+minikube addons enable ingress
+
+helm upgrade guild-forge ./charts/guild-forge \
+  --namespace guild-forge \
+  --set ingress.enabled=true \
+  --set ingress.host=webhooks.yourdomain.com \
+  --set secrets.anthropicApiKey="${ANTHROPIC_API_KEY}"
+```
+
+Then point your Jira/GitHub/Slack webhook URLs at `https://webhooks.yourdomain.com/webhooks/{source}?chapter={chapter-name}`.
+
+---
+
+### Package Structure
+
+```
+packages/
+  shared/          # Canonical types: GuildEvent, AgentManifest, ChapterManifest
+  queue-service/   # pg-boss HTTP queue (enqueue / fetch / complete / fail)
+  webhook-gateway/ # Normalizes Jira / GitHub / Slack / Datadog → GuildEvent
+  registry/        # CRUD store for agent + chapter manifests (PostgreSQL)
+  dispatcher/      # Routes events from queue → per-agent queues via registry
+  scheduler/       # Fires SCHEDULED_TRIGGER events on cron schedule
+  agent-executor/  # MCP-aware agentic loop — calls Claude with tool permissions
+
+config/manifests/  # Seed AgentManifest JSON files for core agents
+charts/guild-forge/ # Helm chart for Kubernetes deployment
+scripts/           # build-images.sh, seed-manifests.ts
+docker-compose.yml # Local dev stack
+```

@@ -1,0 +1,27 @@
+apiVersion: v2
+name: guild-forge
+description: Multi-agent orchestration platform for engineering organizations
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
+
+dependencies:
+  - name: postgresql
+    version: "14.0.0"
+    repository: "oci://registry-1.docker.io/bitnamicharts"
+    condition: postgresql.enabled
+
+keywords:
+  - ai
+  - agents
+  - orchestration
+  - engineering
+  - productivity
+
+home: https://github.com/guild-forge/guild-forge
+sources:
+  - https://github.com/guild-forge/guild-forge
+
+maintainers:
+  - name: Guild Forge Team
+    email: team@guild-forge.dev
