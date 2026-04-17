@@ -7,7 +7,7 @@ import {
   toAnthropicTools,
   executeTool,
   type McpServerConfig,
-} from './mcp-registry';
+} from './mcp-registry.js';
 
 const MAX_TOOL_ROUNDS = 10;
 

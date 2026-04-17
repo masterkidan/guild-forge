@@ -1,7 +1,7 @@
 import { GuildEventSchema } from '@guild-forge/shared';
-import type { QueueClient } from './queue-client';
-import type { RegistryClient } from './registry-client';
-import { routeEvent } from './router';
+import type { QueueClient } from './queue-client.js';
+import type { RegistryClient } from './registry-client.js';
+import { routeEvent } from './router.js';
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 

@@ -1,6 +1,6 @@
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
-import type { QueueManager } from './queue-manager';
+import type { QueueManager } from './queue-manager.js';
 
 const EnqueueBody = z.object({
   data: z.unknown(),

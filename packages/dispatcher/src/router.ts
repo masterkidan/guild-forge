@@ -1,6 +1,6 @@
 import type { GuildEvent } from '@guild-forge/shared';
-import type { QueueClient } from './queue-client';
-import type { RegistryClient } from './registry-client';
+import type { QueueClient } from './queue-client.js';
+import type { RegistryClient } from './registry-client.js';
 
 const PRIORITY_MAP: Record<string, number> = {
   critical: 10,

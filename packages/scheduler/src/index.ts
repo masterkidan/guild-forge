@@ -1,6 +1,6 @@
-import { QueueClient } from './queue-client';
-import { RegistryClient } from './registry-client';
-import { AgentScheduler } from './scheduler';
+import { QueueClient } from './queue-client.js';
+import { RegistryClient } from './registry-client.js';
+import { AgentScheduler } from './scheduler.js';
 
 const QUEUE_SERVICE_URL = process.env.QUEUE_SERVICE_URL;
 const REGISTRY_URL = process.env.REGISTRY_URL;

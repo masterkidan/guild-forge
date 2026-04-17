@@ -1,9 +1,9 @@
 import Anthropic from '@anthropic-ai/sdk';
 import type { AgentManifest } from '@guild-forge/shared';
-import type { QueueClient } from './queue-client';
-import type { RegistryClient } from './registry-client';
-import { executeJob } from './executor';
-import type { McpServerConfig } from './mcp-registry';
+import type { QueueClient } from './queue-client.js';
+import type { RegistryClient } from './registry-client.js';
+import { executeJob } from './executor.js';
+import type { McpServerConfig } from './mcp-registry.js';
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 const MANIFEST_CACHE_TTL_MS = 5 * 60 * 1000;

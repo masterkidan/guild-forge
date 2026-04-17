@@ -1,6 +1,6 @@
 import Fastify from 'fastify';
-import { createDb } from './db';
-import { registerRoutes } from './routes';
+import { createDb } from './db.js';
+import { registerRoutes } from './routes.js';
 
 const PORT = parseInt(process.env.PORT ?? '8080', 10);
 const DATABASE_URL = process.env.DATABASE_URL;

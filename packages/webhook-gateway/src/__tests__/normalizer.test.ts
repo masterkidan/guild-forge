@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { normalizeWebhook } from '../normalizer';
+import { normalizeWebhook } from '../normalizer.js';
 
 describe('normalizeWebhook', () => {
   describe('jira', () => {

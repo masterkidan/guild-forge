@@ -1,6 +1,6 @@
 import Fastify from 'fastify';
-import { createQueueManager } from './queue-manager';
-import { registerRoutes } from './routes';
+import { createQueueManager } from './queue-manager.js';
+import { registerRoutes } from './routes.js';
 
 const PORT = parseInt(process.env.PORT ?? '8080', 10);
 const DATABASE_URL = process.env.DATABASE_URL;

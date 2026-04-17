@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import type { QueueManager } from '../queue-manager';
+import type { QueueManager } from '../queue-manager.js';
 
 /**
  * TDD Anchors for Queue Service (Story 1.3)

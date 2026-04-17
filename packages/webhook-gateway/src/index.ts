@@ -1,6 +1,6 @@
 import Fastify from 'fastify';
-import { registerWebhookRoutes } from './routes';
-import { QueueClient } from './queue-client';
+import { registerWebhookRoutes } from './routes.js';
+import { QueueClient } from './queue-client.js';
 
 const PORT = parseInt(process.env.PORT ?? '8080', 10);
 const QUEUE_SERVICE_URL = process.env.QUEUE_SERVICE_URL;

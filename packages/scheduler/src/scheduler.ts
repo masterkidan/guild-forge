@@ -1,7 +1,7 @@
 import cron from 'node-cron';
 import { randomUUID } from 'crypto';
 import type { AgentManifest, GuildEvent } from '@guild-forge/shared';
-import type { QueueClient } from './queue-client';
+import type { QueueClient } from './queue-client.js';
 
 type ScheduledTask = ReturnType<typeof cron.schedule>;
 

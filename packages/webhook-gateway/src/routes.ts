@@ -1,6 +1,6 @@
 import type { FastifyInstance } from 'fastify';
-import { normalizeWebhook } from './normalizer';
-import type { QueueClient } from './queue-client';
+import { normalizeWebhook } from './normalizer.js';
+import type { QueueClient } from './queue-client.js';
 
 const KNOWN_SOURCES = ['jira', 'github', 'slack', 'teams', 'datadog', 'gitlab', 'github-actions'];
 

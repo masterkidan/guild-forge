@@ -1,7 +1,7 @@
 import PgBoss from 'pg-boss';
 
 export interface EnqueueOptions {
-  priority?: number;  // 0 = highest, default = 0
+  priority?: number;
   retryLimit?: number;
   retryDelaySeconds?: number;
   expireInSeconds?: number;
@@ -34,6 +34,9 @@ export async function createQueueManager(connectionString: string): Promise<Queu
 
   await boss.start();
 
+  // pg-boss v10: complete/fail require the queue name — track it per job id
+  const jobQueueMap = new Map<string, string>();
+
   return {
     async enqueue(queue, data, opts = {}) {
       const jobId = await boss.send(queue, data as object, {
@@ -46,17 +49,26 @@ export async function createQueueManager(connectionString: string): Promise<Queu
     },
 
     async fetchNext(queue) {
-      const job = await boss.fetch<unknown>(queue);
+      // pg-boss v10: fetch returns Job<T>[] | null
+      const jobs = await boss.fetch<unknown>(queue);
+      const job = Array.isArray(jobs) ? jobs[0] : jobs;
       if (!job) return null;
+      jobQueueMap.set(job.id, queue);
       return { id: job.id, data: job.data };
     },
 
     async complete(jobId) {
-      await boss.complete(jobId);
+      const queue = jobQueueMap.get(jobId);
+      if (!queue) throw new Error(`Unknown job id: ${jobId}`);
+      await boss.complete(queue, jobId);
+      jobQueueMap.delete(jobId);
     },
 
     async fail(jobId, error) {
-      await boss.fail(jobId, error ? new Error(error) : undefined);
+      const queue = jobQueueMap.get(jobId);
+      if (!queue) throw new Error(`Unknown job id: ${jobId}`);
+      await boss.fail(queue, jobId, error ? { error } : undefined);
+      jobQueueMap.delete(jobId);
     },
 
     async isHealthy() {

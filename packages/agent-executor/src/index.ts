@@ -1,8 +1,8 @@
 import Anthropic from '@anthropic-ai/sdk';
-import { QueueClient } from './queue-client';
-import { RegistryClient } from './registry-client';
-import { runAgentWorker } from './worker';
-import { parseMcpServers } from './mcp-registry';
+import { QueueClient } from './queue-client.js';
+import { RegistryClient } from './registry-client.js';
+import { runAgentWorker } from './worker.js';
+import { parseMcpServers } from './mcp-registry.js';
 
 const QUEUE_SERVICE_URL = process.env.QUEUE_SERVICE_URL;
 const REGISTRY_URL = process.env.REGISTRY_URL;

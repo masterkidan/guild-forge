@@ -1,6 +1,6 @@
 import type { FastifyInstance } from 'fastify';
 import { AgentManifestSchema, ChapterManifestSchema } from '@guild-forge/shared';
-import type { Db } from './db';
+import type { Db } from './db.js';
 
 export async function registerRoutes(app: FastifyInstance, db: Db) {
   // --- Agents ---
