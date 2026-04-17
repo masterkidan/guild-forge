@@ -3,6 +3,8 @@ apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: {{ include "guild-forge.fullname" . }}-postgresql
+  annotations:
+    helm.sh/resource-policy: keep
   labels:
     {{- include "guild-forge.labels" . | nindent 4 }}
     app.kubernetes.io/component: postgresql
