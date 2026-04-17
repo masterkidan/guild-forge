@@ -1,5 +1,6 @@
 {
   "name": "@guild-forge/agent-executor",
+  "type": "module",
   "version": "0.1.0",
   "scripts": {
     "build": "tsc",

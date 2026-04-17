@@ -1,5 +1,6 @@
 {
   "name": "@guild-forge/registry",
+  "type": "module",
   "version": "0.1.0",
   "scripts": {
     "build": "tsc",
