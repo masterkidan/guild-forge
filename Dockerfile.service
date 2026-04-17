@@ -4,20 +4,18 @@ ARG SERVICE
 
 WORKDIR /app
 
-# Copy workspace root manifest so Bun resolves workspace dependencies
+# Copy workspace root manifest (defines workspaces array)
 COPY packages/package.json ./packages/
 
-# Copy shared package (workspace dep used by all services)
+# Copy shared package and the target service
 COPY packages/shared ./packages/shared/
-
-# Copy the target service
 COPY packages/${SERVICE} ./packages/${SERVICE}/
 
-WORKDIR /app/packages/${SERVICE}
-
-# Install dependencies — Bun resolves @guild-forge/shared via workspace link
+# Install from workspace root so Bun resolves @guild-forge/shared as a local link
+WORKDIR /app/packages
 RUN bun install
 
 ENV NODE_ENV=production
 
+WORKDIR /app/packages/${SERVICE}
 CMD ["bun", "run", "src/index.ts"]
