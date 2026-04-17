@@ -66,7 +66,7 @@ Resolve imagePullPolicy
 PostgreSQL connection string
 */}}
 {{- define "guild-forge.postgresUrl" -}}
-{{- printf "postgresql://postgres:%s@%s-postgresql:5432/%s" .Values.postgresql.auth.postgresPassword (include "guild-forge.fullname" .) .Values.postgresql.auth.database }}
+{{- printf "postgresql://%s:%s@%s-postgresql:5432/%s" .Values.postgresql.auth.username .Values.postgresql.auth.password (include "guild-forge.fullname" .) .Values.postgresql.auth.database }}
 {{- end }}
 
 {{/*

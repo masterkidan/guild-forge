@@ -5,23 +5,24 @@ global:
   imageRegistry: ""
   imagePullSecrets: []
 
-# PostgreSQL (Bitnami subchart)
+# PostgreSQL (built-in StatefulSet using official postgres image)
 postgresql:
   enabled: true
+  image:
+    tag: "16-alpine"
   auth:
-    postgresPassword: "guild"
+    username: "guild"
+    password: "guild"
     database: "guild"
-  primary:
-    persistence:
-      enabled: true
-      size: 1Gi
-    resources:
-      limits:
-        memory: 512Mi
-        cpu: 500m
-      requests:
-        memory: 256Mi
-        cpu: 100m
+  persistence:
+    size: 1Gi
+  resources:
+    limits:
+      memory: 512Mi
+      cpu: 500m
+    requests:
+      memory: 256Mi
+      cpu: 100m
 
 # Shared image settings — override per-service image.repository if needed
 imageTag: "latest"
