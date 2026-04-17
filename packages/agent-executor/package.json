@@ -12,6 +12,7 @@
   "dependencies": {
     "@anthropic-ai/sdk": "^0.24.0",
     "@guild-forge/shared": "*",
+    "openai": "^6.34.0",
     "zod": "^3.22.0"
   },
   "devDependencies": {

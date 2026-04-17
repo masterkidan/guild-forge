@@ -1,7 +1,7 @@
-import Anthropic from '@anthropic-ai/sdk';
 import type { AgentManifest } from '@guild-forge/shared';
 import type { QueueClient } from './queue-client.js';
 import type { RegistryClient } from './registry-client.js';
+import type { LlmProvider } from './llm-provider.js';
 import { executeJob } from './executor.js';
 import type { McpServerConfig } from './mcp-registry.js';
 
@@ -19,7 +19,7 @@ export async function runAgentWorker(
   chapter: string,
   queueClient: QueueClient,
   registryClient: RegistryClient,
-  anthropic: Anthropic,
+  provider: LlmProvider,
   mcpServers: McpServerConfig[],
   pollIntervalMs: number,
   signal: AbortSignal,
@@ -62,7 +62,7 @@ export async function runAgentWorker(
         throw new Error(`Agent manifest not found: ${agentName} / ${chapter}`);
       }
 
-      const result = await executeJob(job.data, manifest, anthropic, mcpServers);
+      const result = await executeJob(job.data, manifest, provider, mcpServers);
       console.log(`[agent-executor] ${agentName} completed job ${job.id}:`, result.slice(0, 200));
       await queueClient.complete(job.id);
     } catch (err) {

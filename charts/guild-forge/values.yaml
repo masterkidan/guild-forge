@@ -9,7 +9,7 @@ global:
 postgresql:
   enabled: true
   image:
-    tag: "17-alpine"
+    tag: "17-alpine"  # pin to major; use "latest" only for local dev
   auth:
     username: "guild"
     password: "guild"
@@ -124,6 +124,14 @@ agentExecutor:
     agentQueues: "quartermaster:__global,sentinel:__global,ranger:__global,scribe:__global,grandmaster:__global"
     # JSON array of MCP servers: '[{"name":"jira","url":"http://..."}]'
     mcpServers: ""
+    # LLM provider: "anthropic" (default) or "ollama"
+    llmProvider: "anthropic"
+    # Anthropic settings (used when llmProvider=anthropic)
+    anthropicModel: "claude-haiku-4-5-20251001"
+    # Ollama settings (used when llmProvider=ollama)
+    # In minikube, host.minikube.internal resolves to your Mac
+    ollamaBaseUrl: "http://host.minikube.internal:11434"
+    ollamaModel: "qwen2.5"
 
 # Seed Job — one-shot Job that loads agent manifests into the registry
 seedJob:
