@@ -34,11 +34,28 @@ export async function createQueueManager(connectionString: string): Promise<Queu
 
   await boss.start();
 
+  // pg-boss v10: queues must be created before send() — cache to avoid redundant calls
+  const knownQueues = new Set<string>();
+
+  async function ensureQueue(name: string): Promise<void> {
+    if (knownQueues.has(name)) return;
+    await boss.createQueue(name);
+    knownQueues.add(name);
+  }
+
+  // Pre-create the static queues used by the platform
+  await Promise.all([
+    'guild.events.raw',
+    'guild.events.unrouted',
+    'guild.events.deadletter',
+  ].map(ensureQueue));
+
   // pg-boss v10: complete/fail require the queue name — track it per job id
   const jobQueueMap = new Map<string, string>();
 
   return {
     async enqueue(queue, data, opts = {}) {
+      await ensureQueue(queue);
       const jobId = await boss.send(queue, data as object, {
         priority: opts.priority ?? 0,
         retryLimit: opts.retryLimit ?? 3,
@@ -49,6 +66,7 @@ export async function createQueueManager(connectionString: string): Promise<Queu
     },
 
     async fetchNext(queue) {
+      await ensureQueue(queue);
       // pg-boss v10: fetch returns Job<T>[] | null
       const jobs = await boss.fetch<unknown>(queue);
       const job = Array.isArray(jobs) ? jobs[0] : jobs;

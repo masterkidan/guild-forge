@@ -86,7 +86,7 @@ export async function createDb(connectionString: string): Promise<Db> {
         `SELECT manifest FROM registry_agents
          WHERE EXISTS (
            SELECT 1 FROM jsonb_array_elements(manifest->'spec'->'triggers') AS t
-           WHERE t->>'type' = $1
+           WHERE t->>'eventType' = $1
              AND ($2::text IS NULL OR t->>'source' = $2)
          )
          ORDER BY chapter, name`,

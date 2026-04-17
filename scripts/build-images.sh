@@ -52,7 +52,7 @@ if [ "${PUSH}" != "true" ]; then
   echo ""
   echo "  minikube:"
   for SERVICE in "${SERVICES[@]}"; do
-    echo "    minikube image load ${REGISTRY}/${SERVICE}:${TAG}"
+    echo "    minikube image load ${REGISTRY}/${SERVICE}:${TAG} --overwrite=true"
   done
   echo ""
   echo "  kind:"
