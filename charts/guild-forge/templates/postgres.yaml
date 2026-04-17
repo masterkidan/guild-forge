@@ -1,10 +1,9 @@
 {{- if .Values.postgresql.enabled }}
+{{- if not (lookup "apps/v1" "StatefulSet" .Release.Namespace (printf "%s-postgresql" (include "guild-forge.fullname" .))) }}
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: {{ include "guild-forge.fullname" . }}-postgresql
-  annotations:
-    helm.sh/resource-policy: keep
   labels:
     {{- include "guild-forge.labels" . | nindent 4 }}
     app.kubernetes.io/component: postgresql
@@ -60,6 +59,7 @@ spec:
         resources:
           requests:
             storage: {{ .Values.postgresql.persistence.size }}
+{{- end }}
 ---
 apiVersion: v1
 kind: Service
