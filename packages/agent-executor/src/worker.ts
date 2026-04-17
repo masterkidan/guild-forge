@@ -1,17 +1,13 @@
 import type { AgentManifest } from '@guild-forge/shared';
 import type { QueueClient } from './queue-client.js';
 import type { RegistryClient } from './registry-client.js';
-import type { LlmProvider } from './llm-provider.js';
-import { executeJob } from './executor.js';
 import type { McpServerConfig } from './mcp-registry.js';
+import { executeJob } from './executor.js';
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 const MANIFEST_CACHE_TTL_MS = 5 * 60 * 1000;
 
-interface CacheEntry {
-  manifest: AgentManifest;
-  fetchedAt: number;
-}
+interface CacheEntry { manifest: AgentManifest; fetchedAt: number }
 
 export async function runAgentWorker(
   queueName: string,
@@ -19,7 +15,6 @@ export async function runAgentWorker(
   chapter: string,
   queueClient: QueueClient,
   registryClient: RegistryClient,
-  provider: LlmProvider,
   mcpServers: McpServerConfig[],
   pollIntervalMs: number,
   signal: AbortSignal,
@@ -30,13 +25,9 @@ export async function runAgentWorker(
 
   async function getManifest(): Promise<AgentManifest | null> {
     const now = Date.now();
-    if (cache && now - cache.fetchedAt < MANIFEST_CACHE_TTL_MS) {
-      return cache.manifest;
-    }
+    if (cache && now - cache.fetchedAt < MANIFEST_CACHE_TTL_MS) return cache.manifest;
     const manifest = await registryClient.getAgent(agentName, chapter === '__global' ? undefined : chapter);
-    if (manifest) {
-      cache = { manifest, fetchedAt: now };
-    }
+    if (manifest) cache = { manifest, fetchedAt: now };
     return manifest;
   }
 
@@ -51,27 +42,18 @@ export async function runAgentWorker(
       continue;
     }
 
-    if (!job) {
-      await sleep(pollIntervalMs);
-      continue;
-    }
+    if (!job) { await sleep(pollIntervalMs); continue; }
 
     try {
       const manifest = await getManifest();
-      if (!manifest) {
-        throw new Error(`Agent manifest not found: ${agentName} / ${chapter}`);
-      }
+      if (!manifest) throw new Error(`Agent manifest not found: ${agentName} / ${chapter}`);
 
-      const result = await executeJob(job.data, manifest, provider, mcpServers);
+      const result = await executeJob(job.data, manifest, mcpServers);
       console.log(`[agent-executor] ${agentName} completed job ${job.id}:`, result.slice(0, 200));
       await queueClient.complete(job.id);
     } catch (err) {
       console.error(`[agent-executor] Job ${job.id} failed:`, err);
-      try {
-        await queueClient.fail(job.id, String(err));
-      } catch (failErr) {
-        console.error('[agent-executor] Failed to mark job as failed:', failErr);
-      }
+      try { await queueClient.fail(job.id, String(err)); } catch { /* ignore */ }
     }
   }
 

@@ -10,9 +10,10 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.24.0",
+    "@ai-sdk/anthropic": "^3.0.71",
+    "@ai-sdk/openai": "^3.0.53",
     "@guild-forge/shared": "*",
-    "openai": "^6.34.0",
+    "ai": "^6.0.168",
     "zod": "^3.22.0"
   },
   "devDependencies": {
