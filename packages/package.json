@@ -11,11 +11,12 @@
     "shared"
   ],
   "scripts": {
-    "build": "npm run build --workspaces",
+    "build": "bun run build --filter \"*\"",
     "test": "npm run test --workspaces",
     "lint": "npm run lint --workspaces",
-    "dev": "npm run dev --workspaces --if-present",
-    "seed": "tsx ../scripts/seed-manifests.ts"
+    "dev": "bun run dev --filter \"*\"",
+    "seed": "bun run ../scripts/seed-manifests.ts",
+    "typecheck": "bun run typecheck --filter \"*\""
   },
   "devDependencies": {
     "typescript": "^5.4.0",
@@ -23,6 +24,6 @@
     "@types/node": "^20.0.0"
   },
   "engines": {
-    "node": ">=20.0.0"
+    "bun": ">=1.0.0"
   }
 }

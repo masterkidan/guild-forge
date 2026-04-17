@@ -385,7 +385,7 @@ To forge this Guild, provide:
 
 | Tool | Version | Purpose |
 |------|---------|---------|
-| Node.js | ≥ 20 | Build packages |
+| Bun | ≥ 1.0 | Run & build packages |
 | Docker | ≥ 24 | Build images |
 | kubectl | ≥ 1.28 | Manage cluster |
 | Helm | ≥ 3.14 | Deploy chart |
@@ -407,7 +407,7 @@ export ANTHROPIC_API_KEY=sk-ant-...
 docker compose up --build
 
 # 4. Seed agent manifests (in a second terminal)
-REGISTRY_URL=http://localhost:3002 npx tsx scripts/seed-manifests.ts
+REGISTRY_URL=http://localhost:3002 bun run scripts/seed-manifests.ts
 ```
 
 **Endpoints (local):**
