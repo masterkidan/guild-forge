@@ -9,7 +9,7 @@ global:
 postgresql:
   enabled: true
   image:
-    tag: "16-alpine"
+    tag: "17-alpine"
   auth:
     username: "guild"
     password: "guild"
