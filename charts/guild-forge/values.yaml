@@ -128,10 +128,28 @@ agentExecutor:
     llmProvider: "anthropic"
     # Anthropic settings (used when llmProvider=anthropic)
     anthropicModel: "claude-haiku-4-5-20251001"
-    # Ollama settings (used when llmProvider=ollama)
-    # In minikube, host.minikube.internal resolves to your Mac
+    # Ollama settings (used when llmProvider=ollama and ollama.enabled=false)
+    # When ollama.enabled=true the in-cluster service URL is used automatically
     ollamaBaseUrl: "http://host.minikube.internal:11434"
-    ollamaModel: "qwen2.5"
+    ollamaModel: "qwen2.5:3b"
+
+# Ollama — in-cluster LLM server (no API key needed)
+# Models with good tool-calling support: qwen2.5:3b (~2GB), qwen2.5:7b (~4.5GB), llama3.1:8b (~5GB)
+# For a quick local test: qwen2.5:0.5b (~400MB, limited tool calling)
+ollama:
+  enabled: false
+  image:
+    tag: "latest"
+  model: "qwen2.5:3b"
+  persistence:
+    size: 10Gi
+  resources:
+    limits:
+      memory: 8Gi
+      cpu: 4000m
+    requests:
+      memory: 4Gi
+      cpu: 500m
 
 # Seed Job — one-shot Job that loads agent manifests into the registry
 seedJob:

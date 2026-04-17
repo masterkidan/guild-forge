@@ -47,9 +47,9 @@ spec:
               value: {{ .Values.agentExecutor.config.anthropicModel | default "claude-haiku-4-5-20251001" | quote }}
             {{- else }}
             - name: OLLAMA_BASE_URL
-              value: {{ .Values.agentExecutor.config.ollamaBaseUrl | default "http://host.minikube.internal:11434" | quote }}
+              value: {{ include "guild-forge.ollamaUrl" . | quote }}
             - name: OLLAMA_MODEL
-              value: {{ .Values.agentExecutor.config.ollamaModel | default "qwen2.5" | quote }}
+              value: {{ .Values.ollama.model | default .Values.agentExecutor.config.ollamaModel | default "qwen2.5:3b" | quote }}
             {{- end }}
           resources:
             {{- toYaml .Values.agentExecutor.resources | nindent 12 }}

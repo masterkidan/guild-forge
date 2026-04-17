@@ -79,3 +79,14 @@ Internal service URLs
 {{- define "guild-forge.registryUrl" -}}
 {{- printf "http://%s-registry:8080" (include "guild-forge.fullname" .) }}
 {{- end }}
+
+{{/*
+Ollama base URL — in-cluster when ollama.enabled, otherwise falls back to configured value
+*/}}
+{{- define "guild-forge.ollamaUrl" -}}
+{{- if .Values.ollama.enabled }}
+{{- printf "http://%s-ollama:11434" (include "guild-forge.fullname" .) }}
+{{- else }}
+{{- .Values.agentExecutor.config.ollamaBaseUrl | default "http://host.minikube.internal:11434" }}
+{{- end }}
+{{- end }}

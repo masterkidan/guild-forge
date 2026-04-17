@@ -1,0 +1,107 @@
+{{- if .Values.ollama.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "guild-forge.fullname" . }}-ollama-models
+  labels:
+    {{- include "guild-forge.labels" . | nindent 4 }}
+    app.kubernetes.io/component: ollama
+  annotations:
+    helm.sh/resource-policy: keep
+spec:
+  accessModes: ["ReadWriteOnce"]
+  resources:
+    requests:
+      storage: {{ .Values.ollama.persistence.size }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "guild-forge.fullname" . }}-ollama
+  labels:
+    {{- include "guild-forge.labels" . | nindent 4 }}
+    app.kubernetes.io/component: ollama
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "guild-forge.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: ollama
+  template:
+    metadata:
+      labels:
+        {{- include "guild-forge.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: ollama
+    spec:
+      containers:
+        - name: ollama
+          image: "ollama/ollama:{{ .Values.ollama.image.tag }}"
+          imagePullPolicy: IfNotPresent
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              # Start server in background
+              ollama serve &
+              SERVER_PID=$!
+              # Wait for server to accept connections
+              until curl -sf http://localhost:11434/api/tags > /dev/null 2>&1; do
+                echo "Waiting for Ollama server..."
+                sleep 2
+              done
+              # Pull model if not already present
+              if ! ollama list | grep -q "{{ .Values.ollama.model }}"; then
+                echo "Pulling model {{ .Values.ollama.model }}..."
+                ollama pull {{ .Values.ollama.model }}
+              else
+                echo "Model {{ .Values.ollama.model }} already present."
+              fi
+              echo "Ready."
+              wait $SERVER_PID
+          ports:
+            - name: http
+              containerPort: 11434
+          env:
+            - name: OLLAMA_MODELS
+              value: /models
+          livenessProbe:
+            httpGet:
+              path: /api/tags
+              port: 11434
+            initialDelaySeconds: 10
+            periodSeconds: 15
+            failureThreshold: 5
+          readinessProbe:
+            httpGet:
+              path: /api/tags
+              port: 11434
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            # Allow up to 20 min for initial model pull
+            failureThreshold: 120
+          resources:
+            {{- toYaml .Values.ollama.resources | nindent 12 }}
+          volumeMounts:
+            - name: models
+              mountPath: /models
+      volumes:
+        - name: models
+          persistentVolumeClaim:
+            claimName: {{ include "guild-forge.fullname" . }}-ollama-models
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "guild-forge.fullname" . }}-ollama
+  labels:
+    {{- include "guild-forge.labels" . | nindent 4 }}
+    app.kubernetes.io/component: ollama
+spec:
+  type: ClusterIP
+  ports:
+    - port: 11434
+      targetPort: http
+      name: http
+  selector:
+    {{- include "guild-forge.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: ollama
+{{- end }}
