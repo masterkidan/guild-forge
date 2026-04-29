@@ -25,16 +25,20 @@ export async function routeEvent(
   }
 
   if (agents.length === 0) {
+    console.log(`[dispatcher] No agents for ${event.type} from ${event.source} — sending to unrouted`);
     await queue.enqueue('guild.events.unrouted', event, { priority: PRIORITY_MAP[event.routing.priority] ?? 0 });
     return;
   }
 
   const priority = PRIORITY_MAP[event.routing.priority] ?? 0;
 
+  console.log(`[dispatcher] Routing ${event.type} to ${agents.map((a) => a.metadata.name).join(', ')}`);
+
   await Promise.all(
     agents.map((manifest) => {
       const chapter = manifest.metadata.chapter ?? '__global';
       const queueName = `guild.agents.${manifest.metadata.name}.${chapter}`;
+      console.log(`[dispatcher] Enqueuing to ${queueName}`);
       return queue.enqueue(queueName, event, { priority });
     }),
   );

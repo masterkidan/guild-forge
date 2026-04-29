@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Guild Forge — Pipeline</title>
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{
+      --bg:#0d1117;--surface:#161b22;--border:#21262d;
+      --red:#e94560;--green:#2ecc71;--amber:#ffc107;
+      --blue:#58a6ff;--purple:#bc8cff;--cyan:#39d0d8;
+      --text:#e6edf3;--muted:#7d8590;
+    }
+    body{background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,sans-serif;min-height:100vh}
+
+    /* ── header ── */
+    header{
+      display:flex;align-items:center;gap:14px;
+      padding:11px 20px;border-bottom:1px solid var(--border);
+      background:var(--surface);position:sticky;top:0;z-index:10;
+    }
+    header h1{font-size:1rem;color:var(--red);letter-spacing:.03em}
+    .health-pills{display:flex;gap:10px;align-items:center}
+    .pill{display:flex;align-items:center;gap:5px;font-size:.7rem;color:var(--muted)}
+    .dot{width:8px;height:8px;border-radius:50%;background:#444;transition:background .3s,box-shadow .3s}
+    .dot.ok{background:var(--green);box-shadow:0 0 5px var(--green)}
+    .dot.down{background:var(--red);box-shadow:0 0 5px var(--red)}
+    #last-updated{font-size:.68rem;color:var(--muted);margin-left:auto}
+
+    /* ── tabs ── */
+    .tabs{
+      display:flex;border-bottom:1px solid var(--border);
+      background:var(--surface);padding:0 16px;
+    }
+    .tab{
+      padding:9px 16px;font-size:.78rem;cursor:pointer;
+      color:var(--muted);border-bottom:2px solid transparent;
+      transition:color .2s,border-color .2s;user-select:none;
+    }
+    .tab:hover{color:var(--text)}
+    .tab.active{color:var(--red);border-bottom-color:var(--red)}
+
+    /* ── panels ── */
+    .panel{display:none;height:calc(100vh - 88px);overflow:hidden;flex-direction:column}
+    .panel.active{display:flex}
+
+    /* ══════════════════════════════════════════════════
+       FLOW GRAPH
+       ══════════════════════════════════════════════════ */
+    #flow-wrap{flex:1;overflow:auto;background:var(--bg);position:relative}
+    #flow-svg{display:block}
+
+    /* ── trace / legend bar ── */
+    #trace-bar{
+      height:200px;min-height:120px;
+      border-top:1px solid var(--border);
+      display:flex;flex-direction:column;
+      background:var(--surface);
+    }
+    #trace-bar-head{
+      display:flex;align-items:center;padding:6px 14px;
+      font-size:.68rem;color:var(--muted);text-transform:uppercase;
+      letter-spacing:.06em;border-bottom:1px solid var(--border);
+      flex-shrink:0;gap:16px;
+    }
+    #trace-bar-head .legend{display:flex;gap:12px;margin-left:auto}
+    .leg{display:flex;align-items:center;gap:5px;font-size:.68rem;color:var(--muted)}
+    .leg-dot{width:8px;height:8px;border-radius:50%}
+    #trace-scroll{flex:1;overflow-y:auto}
+    #trace-list{font-size:.75rem}
+
+    .trace-row{
+      display:grid;
+      grid-template-columns:140px 100px 1fr 80px 80px;
+      gap:6px;padding:5px 14px;
+      border-bottom:1px solid var(--border);
+      cursor:pointer;transition:background .15s;
+      font-family:'Courier New',monospace;align-items:center;
+    }
+    .trace-row:hover{background:rgba(88,166,255,.06)}
+    .trace-row.selected{background:rgba(88,166,255,.13)}
+    .t-corr{color:var(--blue);font-size:.68rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .t-type{color:var(--purple)}
+    .t-queue{color:var(--cyan);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .t-ts{color:var(--muted);font-size:.65rem}
+    .s-pill{display:inline-block;padding:1px 7px;border-radius:10px;font-size:.65rem;font-family:system-ui}
+    .s-active{background:rgba(255,193,7,.18);color:var(--amber)}
+    .s-completed,.s-archived{background:rgba(46,204,113,.15);color:var(--green)}
+    .s-failed{background:rgba(233,69,96,.18);color:var(--red)}
+    .s-created,.s-retry{background:rgba(88,166,255,.15);color:var(--blue)}
+
+    /* ══════════════════════════════════════════════════
+       DATA PANEL
+       ══════════════════════════════════════════════════ */
+    #panel-data{
+      display:none;padding:18px;gap:18px;overflow-y:auto;align-content:start;
+      grid-template-columns:1fr 1fr;
+    }
+    #panel-data.active{display:grid}
+    @media(max-width:700px){#panel-data.active{grid-template-columns:1fr}}
+    .card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:16px 18px}
+    .card h2{font-size:.7rem;text-transform:uppercase;letter-spacing:.08em;color:var(--red);margin-bottom:12px}
+    table{width:100%;border-collapse:collapse;font-size:.78rem;font-family:'Courier New',monospace}
+    th{text-align:left;color:var(--muted);font-weight:600;padding:5px 7px;border-bottom:1px solid var(--border);font-family:system-ui;font-size:.68rem;text-transform:uppercase;letter-spacing:.06em}
+    td{padding:6px 7px;border-bottom:1px solid var(--border);vertical-align:top}
+    tr:last-child td{border-bottom:none}
+    tr.amber td{color:var(--amber)}
+    .empty-msg{color:var(--muted);font-size:.75rem;font-style:italic;padding:8px 0}
+
+    /* ══════════════════════════════════════════════════
+       SEND WEBHOOK PANEL
+       ══════════════════════════════════════════════════ */
+    #panel-send{display:none;padding:20px;overflow-y:auto}
+    #panel-send.active{display:block}
+    #panel-send .inner{max-width:520px}
+    .form-group{margin-bottom:13px}
+    label{display:block;font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:5px}
+    select,textarea,input[type=text]{
+      width:100%;background:var(--bg);color:var(--text);
+      border:1px solid var(--border);border-radius:4px;
+      padding:7px 9px;font-size:.8rem;
+      font-family:'Courier New',monospace;outline:none;
+      transition:border-color .2s;
+    }
+    select:focus,textarea:focus,input:focus{border-color:var(--red)}
+    textarea{resize:vertical;min-height:120px}
+    button{
+      background:var(--red);color:#fff;border:none;border-radius:4px;
+      padding:8px 20px;font-size:.83rem;font-weight:600;cursor:pointer;
+      transition:background .2s,transform .1s;
+    }
+    button:hover{background:#c73652}
+    button:active{transform:scale(.97)}
+    #webhook-result{
+      margin-top:13px;padding:10px;border-radius:4px;
+      font-family:'Courier New',monospace;font-size:.75rem;
+      white-space:pre-wrap;word-break:break-all;display:none;
+    }
+    #webhook-result.success{background:rgba(46,204,113,.1);border:1px solid var(--green);color:var(--green);display:block}
+    #webhook-result.error{background:rgba(233,69,96,.1);border:1px solid var(--red);color:var(--red);display:block}
+  </style>
+</head>
+<body>
+<header>
+  <h1>Guild Forge</h1>
+  <div class="health-pills">
+    <div class="pill"><span class="dot" id="dot-queue"></span><span>Queue</span></div>
+    <div class="pill"><span class="dot" id="dot-registry"></span><span>Registry</span></div>
+    <div class="pill"><span class="dot" id="dot-webhook"></span><span>Webhook</span></div>
+  </div>
+  <span id="last-updated"></span>
+</header>
+
+<div class="tabs">
+  <div class="tab active" data-panel="flow">Pipeline Graph</div>
+  <div class="tab" data-panel="data">Queues &amp; Agents</div>
+  <div class="tab" data-panel="send">Send Webhook</div>
+</div>
+
+<!-- ── FLOW GRAPH ── -->
+<div class="panel active" id="panel-flow">
+  <div id="flow-wrap">
+    <svg id="flow-svg" xmlns="http://www.w3.org/2000/svg"
+         xmlns:xlink="http://www.w3.org/1999/xlink"></svg>
+  </div>
+  <div id="trace-bar">
+    <div id="trace-bar-head">
+      <span>Recent Events</span>
+      <span style="color:var(--muted);font-size:.65rem">click to trace path</span>
+      <div class="legend">
+        <div class="leg"><div class="leg-dot" style="background:var(--amber)"></div>pending</div>
+        <div class="leg"><div class="leg-dot" style="background:var(--green)"></div>active / executing</div>
+        <div class="leg"><div class="leg-dot" style="background:var(--cyan)"></div>selected trace</div>
+      </div>
+    </div>
+    <div id="trace-scroll"><div id="trace-list"></div></div>
+  </div>
+</div>
+
+<!-- ── QUEUES & AGENTS ── -->
+<div class="panel" id="panel-data">
+  <div class="card">
+    <h2>Queue Depths</h2>
+    <table><thead><tr><th>Name</th><th>Pending</th><th>Active</th></tr></thead>
+      <tbody id="queues-body"><tr><td colspan="3" class="empty-msg">Loading…</td></tr></tbody>
+    </table>
+  </div>
+  <div class="card">
+    <h2>Registered Agents</h2>
+    <table><thead><tr><th>Name</th><th>Chapter</th><th>Triggers</th></tr></thead>
+      <tbody id="agents-body"><tr><td colspan="3" class="empty-msg">Loading…</td></tr></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ── SEND WEBHOOK ── -->
+<div class="panel" id="panel-send">
+  <div class="inner">
+    <div class="form-group">
+      <label for="ws">Source</label>
+      <select id="ws">
+        <option value="github">github</option>
+        <option value="jira">jira</option>
+        <option value="slack">slack</option>
+        <option value="datadog">datadog</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label for="wc">Chapter</label>
+      <input type="text" id="wc" value="default"/>
+    </div>
+    <div class="form-group">
+      <label for="wp">Payload (JSON)</label>
+      <textarea id="wp">{"action":"opened","pull_request":{"number":42,"title":"Test PR","merged":false,"user":{"login":"test-user"},"head":{"ref":"feature/test"}},"repository":{"full_name":"org/repo"}}</textarea>
+    </div>
+    <button id="wb">Send Webhook</button>
+    <pre id="webhook-result"></pre>
+  </div>
+</div>
+
+<script>
+'use strict';
+// ─────────────────────────────────────────────────────────────
+// UTILS
+// ─────────────────────────────────────────────────────────────
+const SVG_NS   = 'http://www.w3.org/2000/svg';
+const XLINK_NS = 'http://www.w3.org/1999/xlink';
+function svgEl(tag, attrs={}) {
+  const el = document.createElementNS(SVG_NS, tag);
+  for (const [k,v] of Object.entries(attrs)) {
+    if (k === 'href') el.setAttributeNS(XLINK_NS, 'href', v);
+    else el.setAttribute(k, String(v));
+  }
+  return el;
+}
+function esc(s){ return String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') }
+function fmtTime(iso){ try{ return new Date(iso).toLocaleTimeString() }catch{ return iso??'—' } }
+function safeId(s){ return s.replace(/[\.\s]/g,'-') }
+
+// ─────────────────────────────────────────────────────────────
+// TABS
+// ─────────────────────────────────────────────────────────────
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('panel-'+tab.dataset.panel).classList.add('active');
+  });
+});
+function switchToFlow(){
+  document.querySelectorAll('.tab,.panel').forEach(e=>e.classList.remove('active'));
+  document.querySelector('[data-panel="flow"]').classList.add('active');
+  document.getElementById('panel-flow').classList.add('active');
+}
+
+// ─────────────────────────────────────────────────────────────
+// HEALTH
+// ─────────────────────────────────────────────────────────────
+async function refreshStatus(){
+  try {
+    const d = await fetch('/api/status').then(r=>r.json());
+    setDot('dot-queue',  d.queue?.ok);
+    setDot('dot-registry',d.registry?.ok);
+    setDot('dot-webhook',d.webhook?.ok);
+  } catch { ['dot-queue','dot-registry','dot-webhook'].forEach(id=>setDot(id,false)) }
+}
+function setDot(id,ok){ document.getElementById(id).className='dot '+(ok?'ok':'down') }
+
+// ─────────────────────────────────────────────────────────────
+// DATA PANEL – queues table
+// ─────────────────────────────────────────────────────────────
+async function refreshQueues(){
+  const tb=document.getElementById('queues-body');
+  try {
+    const data=await fetch('/api/queues').then(r=>r.json());
+    if(!Array.isArray(data)||!data.length){ tb.innerHTML='<tr><td colspan="3" class="empty-msg">No queues</td></tr>'; return; }
+    tb.innerHTML=data.map(q=>`<tr${(q.size??0)>0?' class="amber"':''}><td>${esc(q.name)}</td><td>${q.size??0}</td><td>${q.active??0}</td></tr>`).join('');
+  } catch { tb.innerHTML='<tr><td colspan="3" class="empty-msg">Error</td></tr>' }
+}
+
+// ─────────────────────────────────────────────────────────────
+// DATA PANEL – agents table
+// ─────────────────────────────────────────────────────────────
+let _agents = [];
+async function refreshAgents(){
+  const tb=document.getElementById('agents-body');
+  try {
+    _agents=await fetch('/api/agents').then(r=>r.json());
+    if(!Array.isArray(_agents)||!_agents.length){ tb.innerHTML='<tr><td colspan="3" class="empty-msg">No agents</td></tr>'; return; }
+    tb.innerHTML=_agents.map(a=>{
+      const name=a?.metadata?.name??'—', ch=a?.metadata?.chapter??'global';
+      const trigs=(a?.spec?.triggers??[]).map(t=>t.eventType).filter(Boolean).join(', ')||'—';
+      return `<tr><td>${esc(name)}</td><td>${esc(ch)}</td><td>${esc(trigs)}</td></tr>`;
+    }).join('');
+  } catch { tb.innerHTML='<tr><td colspan="3" class="empty-msg">Error</td></tr>' }
+}
+
+// ─────────────────────────────────────────────────────────────
+// SEND WEBHOOK
+// ─────────────────────────────────────────────────────────────
+document.getElementById('wb').addEventListener('click', async ()=>{
+  const source=document.getElementById('ws').value;
+  const chapter=document.getElementById('wc').value||'default';
+  const resultEl=document.getElementById('webhook-result');
+  let payload;
+  try { payload=JSON.parse(document.getElementById('wp').value) }
+  catch { resultEl.className='error'; resultEl.textContent='Invalid JSON'; return }
+  resultEl.className=''; resultEl.style.display='none';
+  try {
+    const res=await fetch('/api/webhook',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({source,chapter,payload})});
+    const data=await res.json();
+    if(res.ok){
+      resultEl.className='success';
+      const eid=data.eventId??data.id??null;
+      resultEl.textContent=eid?'Accepted — correlationId: '+eid:JSON.stringify(data,null,2);
+      switchToFlow();
+    } else {
+      resultEl.className='error';
+      resultEl.textContent=data.error??JSON.stringify(data,null,2);
+    }
+  } catch(err){ resultEl.className='error'; resultEl.textContent=err.message??'Request failed' }
+});
+
+// ═══════════════════════════════════════════════════════════════
+//  ╔═══════════════════════════════════════════╗
+//  ║         PIPELINE FLOW GRAPH               ║
+//  ╚═══════════════════════════════════════════╝
+// ═══════════════════════════════════════════════════════════════
+
+// Layout constants
+const NW=130, NH=46, PAD=24, ROW_H=70;
+const COL_X=[60, 220, 390, 560, 740];  // source, webhook, q-raw, dispatcher, agents
+
+// Node colour themes
+const THEME={
+  source:  {fill:'#0e1f0e',stroke:'#2ecc71',text:'#2ecc71'},
+  service: {fill:'#0e1428',stroke:'#58a6ff',text:'#58a6ff'},
+  queue:   {fill:'#180e28',stroke:'#bc8cff',text:'#bc8cff'},
+  sink:    {fill:'#1a1a1a',stroke:'#444',   text:'#666'},
+  agent:   {fill:'#0e2424',stroke:'#39d0d8',text:'#39d0d8'},
+};
+
+// Static node definitions (col/row are layout slots, resolved to x/y later)
+const STATIC_NODES=[
+  {id:'src-github',  label:'GitHub',         sub:'webhook source', kind:'source',  col:0, row:0},
+  {id:'src-jira',    label:'Jira',           sub:'webhook source', kind:'source',  col:0, row:1},
+  {id:'src-slack',   label:'Slack',          sub:'webhook source', kind:'source',  col:0, row:2},
+  {id:'src-custom',  label:'Custom',         sub:'webhook source', kind:'source',  col:0, row:3},
+  {id:'svc-webhook', label:'webhook-gateway',sub:'service',        kind:'service', col:1, row:1.5},
+  {id:'q-raw',       label:'events.raw',     sub:'queue',          kind:'queue',   col:2, row:1.5},
+  {id:'svc-dispatch',label:'dispatcher',     sub:'service',        kind:'service', col:3, row:1.5},
+  {id:'q-unrouted',  label:'unrouted',       sub:'sink queue',     kind:'sink',    col:4, row:0},
+  {id:'q-deadletter',label:'dead-letter',    sub:'sink queue',     kind:'sink',    col:4, row:99}, // row resolved dynamically
+];
+
+// Static edges (always rendered)
+const STATIC_EDGES=[
+  {from:'src-github',  to:'svc-webhook', label:''},
+  {from:'src-jira',    to:'svc-webhook', label:''},
+  {from:'src-slack',   to:'svc-webhook', label:''},
+  {from:'src-custom',  to:'svc-webhook', label:''},
+  {from:'svc-webhook', to:'q-raw',       label:''},
+  {from:'q-raw',       to:'svc-dispatch',label:''},
+  {from:'svc-dispatch',to:'q-unrouted',  label:'no match'},
+];
+
+// ── Graph state ──────────────────────────────────────────────
+let _gNodes=[], _gEdges=[], _selectedCorr=null, _traceJobs=[], _qStats=[];
+
+// ── Build graph from registry + trace data ───────────────────
+function buildGraph(agents, traces){
+  // Discover agents from registry and queue names
+  const agentMap=new Map();
+  for(const a of agents){
+    const name=a?.metadata?.name, ch=a?.metadata?.chapter??'__global';
+    if(name) agentMap.set(`${name}.${ch}`,{name,ch});
+  }
+  for(const j of traces){
+    const m=(j.queue||'').match(/^guild\.agents\.(.+)\.([^.]+)$/);
+    if(m) agentMap.set(`${m[1]}.${m[2]}`,{name:m[1],ch:m[2]});
+  }
+  const agentList=[...agentMap.values()];
+  const numAgents=agentList.length;
+
+  // Resolve static node positions
+  _gNodes=STATIC_NODES.map(n=>({
+    ...n,
+    x: COL_X[n.col],
+    y: PAD + (n.row===99 ? numAgents+2 : n.row) * ROW_H,
+  }));
+
+  // Position unrouted above agents, dead-letter below
+  const unrouted=_gNodes.find(n=>n.id==='q-unrouted');
+  if(unrouted) unrouted.y=PAD;
+
+  const deadletter=_gNodes.find(n=>n.id==='q-deadletter');
+  if(deadletter) deadletter.y=PAD+(numAgents+2)*ROW_H;
+
+  // Agent nodes stacked starting row 1 in col 4
+  agentList.forEach((ag,i)=>{
+    _gNodes.push({
+      id:`agent-${ag.name}.${ag.ch}`,
+      label: ag.name,
+      sub: ag.ch==='__global' ? 'global' : ag.ch,
+      kind:'agent',
+      x: COL_X[4],
+      y: PAD+(1+i)*ROW_H,
+    });
+  });
+
+  // Edges: static + one per agent
+  _gEdges=[...STATIC_EDGES];
+  for(const ag of agentList){
+    _gEdges.push({from:'svc-dispatch', to:`agent-${ag.name}.${ag.ch}`, label:ag.name});
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+// Compute which edges have live traffic from queue stats
+// Returns: Map<edgeKey, {color, count, processing}>
+//   edgeKey = "fromId→toId"
+//   processing = set of node IDs that are actively executing
+// ─────────────────────────────────────────────────────────────
+function computeLiveState(qStats){
+  const liveEdges=new Map(); // edgeKey → {color, count}
+  const processingNodes=new Set();
+  // Recent source activity from traces (last 60s)
+  const recentSources=new Set();
+  const now=Date.now();
+  for(const j of _traceJobs){
+    if(j.queue==='guild.events.raw' && j.createdAt){
+      const age=now-new Date(j.createdAt).getTime();
+      if(age<60000 && j.eventSource){
+        const sid='src-'+(j.eventSource==='github'||j.eventSource==='jira'||j.eventSource==='slack'?j.eventSource:'custom');
+        recentSources.add(sid);
+      }
+    }
+  }
+
+  function markEdge(from,to,color,count){
+    const k=`${from}→${to}`;
+    const cur=liveEdges.get(k);
+    if(!cur||count>(cur.count||0)) liveEdges.set(k,{color,count});
+  }
+
+  for(const q of qStats){
+    const name=q.name, size=q.size??0, active=q.active??0;
+    if(name==='guild.events.raw'){
+      if(size>0){
+        // Jobs are pending — traffic: sources → webhook → q-raw
+        for(const sid of recentSources) markEdge(sid,'svc-webhook','#ffc107',size);
+        if(recentSources.size===0) markEdge('src-custom','svc-webhook','#ffc107',size);
+        markEdge('svc-webhook','q-raw','#ffc107',size);
+      }
+      if(active>0){
+        // Dispatcher is consuming — traffic: q-raw → dispatcher
+        markEdge('q-raw','svc-dispatch','#2ecc71',active);
+      }
+    }
+    if(name==='guild.events.unrouted'&&(size>0||active>0)){
+      markEdge('svc-dispatch','q-unrouted','#ffc107',size+active);
+    }
+    const am=name.match(/^guild\.agents\.(.+)\.([^.]+)$/);
+    if(am){
+      const agId=`agent-${am[1]}.${am[2]}`;
+      if(size>0)   markEdge('svc-dispatch',agId,'#ffc107',size);
+      if(active>0){ markEdge('svc-dispatch',agId,'#2ecc71',active); processingNodes.add(agId); }
+    }
+  }
+
+  // Selected trace — overlay in cyan
+  const traceEdgeSet=computeTraceEdges(_traceJobs,_selectedCorr);
+
+  return {liveEdges, processingNodes, traceEdgeSet};
+}
+
+// ─────────────────────────────────────────────────────────────
+// Which edges does the selected trace touch?
+// ─────────────────────────────────────────────────────────────
+function computeTraceEdges(jobs, corr){
+  const s=new Set();
+  if(!corr) return s;
+  const hops=jobs.filter(j=>j.correlationId===corr);
+  for(const j of hops){
+    const q=j.queue||'', src=j.eventSource||'custom';
+    if(q==='guild.events.raw'){
+      const sid='src-'+(src==='github'||src==='jira'||src==='slack'?src:'custom');
+      s.add(`${sid}→svc-webhook`);
+      s.add('svc-webhook→q-raw');
+    }
+    if(q==='guild.events.unrouted'){
+      s.add('q-raw→svc-dispatch');
+      s.add('svc-dispatch→q-unrouted');
+    }
+    const am=q.match(/^guild\.agents\.(.+)\.([^.]+)$/);
+    if(am){
+      s.add('q-raw→svc-dispatch');
+      s.add(`svc-dispatch→agent-${am[1]}.${am[2]}`);
+    }
+  }
+  return s;
+}
+
+// ─────────────────────────────────────────────────────────────
+// Bezier control points for an edge
+// ─────────────────────────────────────────────────────────────
+function edgePath(fromNode, toNode){
+  const fx=fromNode.x+NW, fy=fromNode.y+NH/2;
+  const tx=toNode.x,      ty=toNode.y+NH/2;
+  const dx=(tx-fx)*0.45;
+  return {fx,fy,tx,ty,cx1:fx+dx,cy1:fy,cx2:tx-dx,cy2:ty,
+          d:`M${fx},${fy} C${fx+dx},${fy} ${tx-dx},${ty} ${tx},${ty}`};
+}
+
+// ─────────────────────────────────────────────────────────────
+// RENDER GRAPH
+// ─────────────────────────────────────────────────────────────
+function renderGraph(){
+  const svg=document.getElementById('flow-svg');
+  svg.innerHTML='';
+
+  const {liveEdges, processingNodes, traceEdgeSet}=computeLiveState(_qStats);
+  const nodeById=Object.fromEntries(_gNodes.map(n=>[n.id,n]));
+
+  // SVG canvas size
+  const maxX=Math.max(..._gNodes.map(n=>n.x+NW))+PAD*2;
+  const maxY=Math.max(..._gNodes.map(n=>n.y+NH))+PAD*2;
+  svg.setAttribute('width',maxX);
+  svg.setAttribute('height',maxY);
+  svg.setAttribute('viewBox',`0 0 ${maxX} ${maxY}`);
+
+  // ── Defs: arrow markers ──────────────────────────────────
+  const defs=svgEl('defs');
+  const markerDefs=[
+    {id:'arr-dim',   color:'#2d333b'},
+    {id:'arr-amber', color:'#ffc107'},
+    {id:'arr-green', color:'#2ecc71'},
+    {id:'arr-cyan',  color:'#39d0d8'},
+  ];
+  for(const m of markerDefs){
+    const mk=svgEl('marker',{id:m.id,markerWidth:'8',markerHeight:'8',refX:'7',refY:'3',orient:'auto',markerUnits:'strokeWidth'});
+    const p=svgEl('path',{d:'M0,0 L0,6 L8,3 z',fill:m.color});
+    mk.appendChild(p); defs.appendChild(mk);
+  }
+  svg.appendChild(defs);
+
+  // ── LAYER 1: Edge paths (with IDs for mpath) ─────────────
+  const edgeLayer=svgEl('g',{id:'edge-layer'});
+  for(const edge of _gEdges){
+    const fn=nodeById[edge.from], tn=nodeById[edge.to];
+    if(!fn||!tn) continue;
+    const {d,tx,ty}=edgePath(fn,tn);
+    const eKey=`${edge.from}→${edge.to}`;
+    const eid='eid-'+safeId(edge.from)+'-'+safeId(edge.to);
+
+    const isTrace=traceEdgeSet.has(eKey);
+    const live=liveEdges.get(eKey);
+    const strokeColor = isTrace?'#39d0d8': live?live.color:'#1e2530';
+    const strokeW     = isTrace||live ? 2 : 1.5;
+    const markerEnd   = isTrace?'url(#arr-cyan)': live?(live.color==='#2ecc71'?'url(#arr-green)':'url(#arr-amber)'):'url(#arr-dim)';
+
+    const path=svgEl('path',{
+      id: eid, d, fill:'none',
+      stroke: strokeColor, 'stroke-width': strokeW,
+      'marker-end': markerEnd,
+    });
+    edgeLayer.appendChild(path);
+
+    // Edge label
+    if(edge.label){
+      const lbl=svgEl('text',{
+        x:(fn.x+NW+tn.x)/2, y:fn.y+NH/2-8,
+        'text-anchor':'middle','font-size':'9',
+        fill:isTrace?'#39d0d8':live?live.color:'#3a4050',
+        'font-family':'system-ui',
+      });
+      lbl.textContent=edge.label;
+      edgeLayer.appendChild(lbl);
+    }
+  }
+  svg.appendChild(edgeLayer);
+
+  // ── LAYER 2: Particles (animateMotion along edge paths) ──
+  // Rendered before nodes so nodes sit on top
+  const particleLayer=svgEl('g',{id:'particle-layer'});
+  for(const [eKey, liveInfo] of liveEdges.entries()){
+    const [fromId,toId]=eKey.split('→');
+    const eid='eid-'+safeId(fromId)+'-'+safeId(toId);
+    const color=liveInfo.color;
+    const numParticles=Math.min(3,Math.max(1, liveInfo.count));
+    // Duration based on approximate path length
+    const fn=nodeById[fromId], tn=nodeById[toId];
+    const dur = fn&&tn ? Math.max(0.7, Math.abs(tn.x-fn.x)/180) : 1;
+
+    for(let i=0;i<numParticles;i++){
+      const c=svgEl('circle',{r:'4',fill:color,opacity:'0.85'});
+      const anim=svgEl('animateMotion',{
+        dur:`${dur}s`, begin:`${(i/numParticles)*dur}s`,
+        repeatCount:'indefinite', rotate:'auto',
+      });
+      const mp=svgEl('mpath',{href:'#'+eid});
+      anim.appendChild(mp);
+      c.appendChild(anim);
+      particleLayer.appendChild(c);
+    }
+  }
+  svg.appendChild(particleLayer);
+
+  // ── LAYER 3: Processing rings (pulsing on active agents) ──
+  const ringLayer=svgEl('g',{id:'ring-layer'});
+  for(const nodeId of processingNodes){
+    const n=nodeById[nodeId];
+    if(!n) continue;
+    const cx=n.x+NW/2, cy=n.y+NH/2;
+    const ring=svgEl('ellipse',{cx,cy,rx:NW/2+6,ry:NH/2+6,fill:'none',stroke:'#2ecc71','stroke-width':'1.5',opacity:'0'});
+    ring.appendChild(svgEl('animate',{attributeName:'opacity',values:'0;0.7;0',dur:'1.4s',repeatCount:'indefinite'}));
+    ring.appendChild(svgEl('animate',{attributeName:'rx',values:`${NW/2+4};${NW/2+14}`,dur:'1.4s',repeatCount:'indefinite'}));
+    ring.appendChild(svgEl('animate',{attributeName:'ry',values:`${NH/2+4};${NH/2+14}`,dur:'1.4s',repeatCount:'indefinite'}));
+    ringLayer.appendChild(ring);
+  }
+  svg.appendChild(ringLayer);
+
+  // ── LAYER 4: Nodes ───────────────────────────────────────
+  const nodeLayer=svgEl('g',{id:'node-layer'});
+  for(const node of _gNodes){
+    const c=THEME[node.kind]||THEME.service;
+    const isTraceTouched=[...traceEdgeSet].some(k=>k.includes(node.id));
+    const isProcessing=processingNodes.has(node.id);
+    const hasLiveIn=_gEdges.some(e=>e.to===node.id&&liveEdges.has(`${e.from}→${e.to}`));
+
+    const strokeColor=isTraceTouched?'#39d0d8':isProcessing?'#2ecc71':hasLiveIn?'#ffc107':c.stroke;
+    const strokeW=(isTraceTouched||isProcessing||hasLiveIn)?2:1;
+    const textColor=isTraceTouched?'#39d0d8':isProcessing?'#2ecc71':c.text;
+
+    const g=svgEl('g');
+    const rect=svgEl('rect',{x:node.x,y:node.y,width:NW,height:NH,fill:c.fill,stroke:strokeColor,'stroke-width':strokeW,rx:'6',ry:'6'});
+    if(isProcessing) rect.setAttribute('filter','drop-shadow(0 0 5px #2ecc7155)');
+    else if(isTraceTouched) rect.setAttribute('filter','drop-shadow(0 0 4px #39d0d866)');
+    g.appendChild(rect);
+
+    const t1=svgEl('text',{x:node.x+NW/2,y:node.y+16,'text-anchor':'middle','font-size':'11',fill:textColor,'font-family':'system-ui','font-weight':'600'});
+    t1.textContent=node.label;
+    g.appendChild(t1);
+
+    const t2=svgEl('text',{x:node.x+NW/2,y:node.y+29,'text-anchor':'middle','font-size':'8.5',fill:'#4d5566','font-family':'system-ui'});
+    t2.textContent=node.sub;
+    g.appendChild(t2);
+
+    nodeLayer.appendChild(g);
+  }
+  svg.appendChild(nodeLayer);
+
+  // ── LAYER 5: Queue count badges ──────────────────────────
+  const badgeLayer=svgEl('g',{id:'badge-layer'});
+  for(const q of _qStats){
+    const total=(q.size??0)+(q.active??0);
+    if(total===0) continue;
+    // Map queue name to node id
+    let nodeId=null;
+    if(q.name==='guild.events.raw')      nodeId='q-raw';
+    if(q.name==='guild.events.unrouted') nodeId='q-unrouted';
+    if(q.name==='guild.events.deadletter') nodeId='q-deadletter';
+    const am=q.name.match(/^guild\.agents\.(.+)\.([^.]+)$/);
+    if(am) nodeId=`agent-${am[1]}.${am[2]}`;
+    if(!nodeId) continue;
+    const n=nodeById[nodeId];
+    if(!n) continue;
+
+    const bx=n.x+NW-6, by=n.y-6;
+    const r=9;
+    const circle=svgEl('circle',{cx:bx,cy:by,r,fill:(q.active??0)>0?'#2ecc71':'#ffc107',stroke:n.x?'#0d1117':'#0d1117','stroke-width':'1.5'});
+    const txt=svgEl('text',{x:bx,y:by+4,'text-anchor':'middle','font-size':'8','font-weight':'700',fill:'#000','font-family':'system-ui'});
+    txt.textContent=total>99?'99+':total;
+    badgeLayer.appendChild(circle);
+    badgeLayer.appendChild(txt);
+  }
+  svg.appendChild(badgeLayer);
+}
+
+// ─────────────────────────────────────────────────────────────
+// TRACE LIST
+// ─────────────────────────────────────────────────────────────
+function renderTraceList(jobs){
+  _traceJobs=jobs;
+  const el=document.getElementById('trace-list');
+  if(!jobs.length){ el.innerHTML='<div style="padding:10px 14px;color:var(--muted);font-size:.75rem">No events yet — send one above.</div>'; return; }
+
+  // Group by correlationId, one row per unique correlation
+  const byCorr=new Map();
+  for(const j of jobs){
+    const cid=j.correlationId||j.jobId;
+    if(!byCorr.has(cid)) byCorr.set(cid,[]);
+    byCorr.get(cid).push(j);
+  }
+
+  el.innerHTML=[...byCorr.entries()].map(([cid,hops])=>{
+    const first=hops[0];
+    const short=cid.length>18?cid.slice(0,8)+'…'+cid.slice(-6):cid;
+    const sel=cid===_selectedCorr?' selected':'';
+    const sc='s-'+(first.state||'unknown').toLowerCase();
+    const hcount=hops.length;
+    return `<div class="trace-row${sel}" data-corr="${esc(cid)}">
+      <span class="t-corr" title="${esc(cid)}">${esc(short)}</span>
+      <span class="t-type">${esc(first.eventType||'—')}</span>
+      <span class="t-queue" title="${esc(first.queue)}">${esc(first.queue.replace('guild.',''))}</span>
+      <span class="t-ts">${fmtTime(first.createdAt)}</span>
+      <span class="s-pill ${sc}" title="${hcount} hop${hcount!==1?'s':''}">${esc(first.state||'?')}&nbsp;×${hcount}</span>
+    </div>`;
+  }).join('');
+
+  el.querySelectorAll('.trace-row').forEach(row=>{
+    row.addEventListener('click',()=>{
+      const corr=row.dataset.corr;
+      _selectedCorr=_selectedCorr===corr?null:corr;
+      renderGraph();
+      el.querySelectorAll('.trace-row').forEach(r=>r.classList.toggle('selected',r.dataset.corr===_selectedCorr));
+    });
+  });
+}
+
+// ─────────────────────────────────────────────────────────────
+// MAIN REFRESH
+// ─────────────────────────────────────────────────────────────
+async function refreshFlow(){
+  try {
+    const [agents, traces, stats] = await Promise.all([
+      fetch('/api/agents').then(r=>r.json()).catch(()=>[]),
+      fetch('/api/traces/recent?limit=80').then(r=>r.json()).catch(()=>[]),
+      fetch('/api/queues').then(r=>r.json()).catch(()=>[]),
+    ]);
+    _qStats=Array.isArray(stats)?stats:[];
+    buildGraph(Array.isArray(agents)?agents:[], Array.isArray(traces)?traces:[]);
+    renderGraph();
+    renderTraceList(Array.isArray(traces)?traces:[]);
+  } catch(e){ console.error('[graph]',e) }
+}
+
+async function refresh(){
+  await Promise.allSettled([
+    refreshStatus(), refreshQueues(), refreshAgents(), refreshFlow(),
+  ]);
+  document.getElementById('last-updated').textContent='Updated '+new Date().toLocaleTimeString();
+}
+
+refresh();
+setInterval(refresh, 2000);  // 2s for live graph responsiveness
+</script>
+</body>
+</html>

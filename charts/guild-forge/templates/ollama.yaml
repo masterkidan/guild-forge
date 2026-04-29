@@ -1,4 +1,4 @@
-{{- if .Values.ollama.enabled }}
+{{- if and .Values.ollama.enabled (not .Values.agentExecutor.config.embeddedOllama) }}
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:

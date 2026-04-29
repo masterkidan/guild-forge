@@ -17,11 +17,11 @@ export async function registerRoutes(app: FastifyInstance, queue: QueueManager) 
       return reply.status(400).send({ error: 'Invalid request body', details: result.error.issues });
     }
 
-    const jobId = await queue.enqueue(req.params.queue, result.data.data, {
-      priority: result.data.priority,
-      retryLimit: result.data.retryLimit,
-      expireInSeconds: result.data.expireInSeconds,
-    });
+    const opts: import('./queue-manager.js').EnqueueOptions = {};
+    if (result.data.priority !== undefined) opts.priority = result.data.priority;
+    if (result.data.retryLimit !== undefined) opts.retryLimit = result.data.retryLimit;
+    if (result.data.expireInSeconds !== undefined) opts.expireInSeconds = result.data.expireInSeconds;
+    const jobId = await queue.enqueue(req.params.queue, result.data.data, opts);
 
     return reply.status(202).send({ jobId });
   });
@@ -46,5 +46,24 @@ export async function registerRoutes(app: FastifyInstance, queue: QueueManager) 
     const body = req.body as { error?: string } | undefined;
     await queue.fail(req.params.id, body?.error);
     return reply.status(200).send({ status: 'failed' });
+  });
+
+  // GET /queues/stats - live queue depths for the debug dashboard
+  app.get('/queues/stats', async (_req, reply) => {
+    const stats = await queue.getStats();
+    return reply.send(stats);
+  });
+
+  // GET /queues/jobs/recent?limit=50 - recent jobs across all guild queues
+  app.get<{ Querystring: { limit?: string } }>('/queues/jobs/recent', async (req, reply) => {
+    const limit = Math.min(parseInt(req.query.limit ?? '50', 10), 200);
+    const jobs = await queue.getRecentJobs(limit);
+    return reply.send(jobs);
+  });
+
+  // GET /queues/jobs/trace/:correlationId - all hops for one correlationId
+  app.get<{ Params: { correlationId: string } }>('/queues/jobs/trace/:correlationId', async (req, reply) => {
+    const jobs = await queue.getJobsByCorrelation(req.params.correlationId);
+    return reply.send(jobs);
   });
 }

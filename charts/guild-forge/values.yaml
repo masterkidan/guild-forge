@@ -128,14 +128,17 @@ agentExecutor:
     llmProvider: "anthropic"
     # Anthropic settings (used when llmProvider=anthropic)
     anthropicModel: "claude-haiku-4-5-20251001"
-    # Ollama settings (used when llmProvider=ollama and ollama.enabled=false)
-    # When ollama.enabled=true the in-cluster service URL is used automatically
+    # Ollama settings (used when llmProvider=ollama)
+    # embeddedOllama=true  → uses the combined agent-executor+Ollama image (model baked in at build time)
+    #                        Set OLLAMA_BASE_URL=http://localhost:11434 automatically, no separate Pod needed.
+    # embeddedOllama=false → use ollama.enabled=true for in-cluster Pod, or ollamaBaseUrl for external host
+    embeddedOllama: false
     ollamaBaseUrl: "http://host.minikube.internal:11434"
     ollamaModel: "qwen2.5:3b"
 
-# Ollama — in-cluster LLM server (no API key needed)
+# Ollama — standalone in-cluster LLM server (no API key needed)
+# Not needed when agentExecutor.config.embeddedOllama=true (model is baked into the executor image).
 # Models with good tool-calling support: qwen2.5:3b (~2GB), qwen2.5:7b (~4.5GB), llama3.1:8b (~5GB)
-# For a quick local test: qwen2.5:0.5b (~400MB, limited tool calling)
 ollama:
   enabled: false
   image:
@@ -156,7 +159,7 @@ seedJob:
   enabled: true
   backoffLimit: 4
 
-# Ingress for the Webhook Gateway (disabled by default for local dev)
+# Ingress for the Webhook Gateway (legacy — prefer gateway below for new setups)
 ingress:
   enabled: false
   className: "nginx"
@@ -165,6 +168,30 @@ ingress:
   host: guild-forge.local
   tls: false
   tlsSecret: guild-forge-tls
+
+# Gateway API — single entry point for both dashboard and webhook gateway.
+# Prerequisites (run once):
+#   kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.2.1/standard-install.yaml
+#   minikube addons enable ingress
+#   minikube tunnel   # in a separate terminal — exposes LoadBalancer → 127.0.0.1
+#
+# Then deploy with:
+#   --set gateway.enabled=true
+#
+# After deploy: open http://localhost/ (dashboard) or http://localhost/webhooks/... (webhook-gateway)
+gateway:
+  enabled: false
+  className: eg      # GatewayClass name: "eg" (Envoy Gateway), "cilium", "nginx" (nginx-gateway-fabric)
+  host: ""           # empty = match all hostnames; set e.g. "guild.local" for host-based routing
+
+# Debug Dashboard — lightweight read-only view of queues, registry, and events
+debugDashboard:
+  enabled: true
+  image:
+    repository: guild-forge/debug-dashboard
+    tag: latest
+  service:
+    port: 3333
 
 # Secrets — pass via --set or a separate values file; never commit real values
 secrets:

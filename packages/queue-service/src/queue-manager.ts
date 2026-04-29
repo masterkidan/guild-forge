@@ -1,4 +1,17 @@
 import PgBoss from 'pg-boss';
+import { Pool } from 'pg';
+
+export interface TraceJob {
+  jobId: string;
+  queue: string;
+  state: string;
+  correlationId: string | null;
+  eventType: string | null;
+  eventSource: string | null;
+  createdAt: string;
+  startedAt: string | null;
+  completedAt: string | null;
+}
 
 export interface EnqueueOptions {
   priority?: number;
@@ -14,6 +27,9 @@ export interface QueueManager {
   fail(jobId: string, error?: string): Promise<void>;
   isHealthy(): Promise<boolean>;
   stop(): Promise<void>;
+  getStats(): Promise<Array<{ name: string; size: number; active: number }>>;
+  getRecentJobs(limit: number): Promise<TraceJob[]>;
+  getJobsByCorrelation(correlationId: string): Promise<TraceJob[]>;
 }
 
 export async function createQueueManager(connectionString: string): Promise<QueueManager> {
@@ -33,6 +49,9 @@ export async function createQueueManager(connectionString: string): Promise<Queu
   });
 
   await boss.start();
+
+  // Raw pool for trace queries (pgboss schema direct access)
+  const pool = new Pool({ connectionString, max: 3 });
 
   // pg-boss v10: queues must be created before send() — cache to avoid redundant calls
   const knownQueues = new Set<string>();
@@ -85,7 +104,11 @@ export async function createQueueManager(connectionString: string): Promise<Queu
     async fail(jobId, error) {
       const queue = jobQueueMap.get(jobId);
       if (!queue) throw new Error(`Unknown job id: ${jobId}`);
-      await boss.fail(queue, jobId, error ? { error } : undefined);
+      if (error) {
+        await boss.fail(queue, jobId, { error });
+      } else {
+        await boss.fail(queue, jobId);
+      }
       jobQueueMap.delete(jobId);
     },
 
@@ -100,6 +123,88 @@ export async function createQueueManager(connectionString: string): Promise<Queu
 
     async stop() {
       await boss.stop();
+      await pool.end();
+    },
+
+    async getStats() {
+      // Determine the list of queue names to inspect.
+      // pg-boss v10 exposes getQueues(); fall back to static + known queues otherwise.
+      let names: string[];
+      if (typeof (boss as unknown as { getQueues?: () => Promise<Array<{ name: string }>> }).getQueues === 'function') {
+        const rows = await (boss as unknown as { getQueues: () => Promise<Array<{ name: string }>> }).getQueues();
+        names = rows.map((r) => r.name);
+      } else {
+        const staticQueues = ['guild.events.raw', 'guild.events.unrouted', 'guild.events.deadletter'];
+        names = Array.from(new Set([...staticQueues, ...knownQueues]));
+      }
+
+      return Promise.all(
+        names.map(async (name) => {
+          const [total, active] = await Promise.all([
+            boss.getQueueSize(name).catch(() => 0),
+            boss.getQueueSize(name, { before: 'active' } as Parameters<typeof boss.getQueueSize>[1]).catch(() => 0),
+          ]);
+          // "size" = pending (not yet active); active count reported separately.
+          return { name, size: Math.max(0, total - active), active };
+        }),
+      );
+    },
+
+    async getRecentJobs(limit: number): Promise<TraceJob[]> {
+      const sql = `
+        SELECT id, name as queue, state::text,
+          data->>'correlationId' as "correlationId",
+          data->>'type'          as "eventType",
+          data->>'source'        as "eventSource",
+          createdon::text        as "createdAt",
+          startedon::text        as "startedAt",
+          completedon::text      as "completedAt"
+        FROM pgboss.job
+        WHERE name LIKE 'guild.%'
+        UNION ALL
+        SELECT id, name as queue, 'archived' as state,
+          data->>'correlationId' as "correlationId",
+          data->>'type'          as "eventType",
+          data->>'source'        as "eventSource",
+          createdon::text        as "createdAt",
+          startedon::text        as "startedAt",
+          completedon::text      as "completedAt"
+        FROM pgboss.archive
+        WHERE name LIKE 'guild.%'
+        ORDER BY "createdAt" DESC
+        LIMIT $1
+      `;
+      const { rows } = await pool.query<TraceJob>(sql, [limit]);
+      return rows;
+    },
+
+    async getJobsByCorrelation(correlationId: string): Promise<TraceJob[]> {
+      const sql = `
+        SELECT id, name as queue, state::text,
+          data->>'correlationId' as "correlationId",
+          data->>'type'          as "eventType",
+          data->>'source'        as "eventSource",
+          createdon::text        as "createdAt",
+          startedon::text        as "startedAt",
+          completedon::text      as "completedAt"
+        FROM pgboss.job
+        WHERE name LIKE 'guild.%'
+          AND data->>'correlationId' = $1
+        UNION ALL
+        SELECT id, name as queue, 'archived' as state,
+          data->>'correlationId' as "correlationId",
+          data->>'type'          as "eventType",
+          data->>'source'        as "eventSource",
+          createdon::text        as "createdAt",
+          startedon::text        as "startedAt",
+          completedon::text      as "completedAt"
+        FROM pgboss.archive
+        WHERE name LIKE 'guild.%'
+          AND data->>'correlationId' = $1
+        ORDER BY "createdAt" ASC
+      `;
+      const { rows } = await pool.query<TraceJob>(sql, [correlationId]);
+      return rows;
     },
   };
 }

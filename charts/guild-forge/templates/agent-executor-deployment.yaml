@@ -20,7 +20,7 @@ spec:
     spec:
       containers:
         - name: agent-executor
-          image: "{{ .Values.agentExecutor.image.repository }}:{{ .Values.imageTag }}"
+          image: "{{ .Values.agentExecutor.image.repository }}:{{ .Values.agentExecutor.image.tag | default .Values.imageTag }}"
           imagePullPolicy: {{ .Values.imagePullPolicy }}
           env:
             - name: QUEUE_SERVICE_URL
@@ -35,9 +35,17 @@ spec:
             - name: MCP_SERVERS
               value: {{ .Values.agentExecutor.config.mcpServers | quote }}
             {{- end }}
+            {{- if .Values.agentExecutor.config.embeddedOllama }}
+            {{- /* Embedded Ollama — model runs in the same container */}}
             - name: LLM_PROVIDER
-              value: {{ .Values.agentExecutor.config.llmProvider | default "anthropic" | quote }}
-            {{- if eq (.Values.agentExecutor.config.llmProvider | default "anthropic") "anthropic" }}
+              value: "ollama"
+            - name: OLLAMA_BASE_URL
+              value: "http://localhost:11434"
+            - name: OLLAMA_MODEL
+              value: {{ .Values.agentExecutor.config.ollamaModel | default "qwen2.5:3b" | quote }}
+            {{- else if eq (.Values.agentExecutor.config.llmProvider | default "anthropic") "anthropic" }}
+            - name: LLM_PROVIDER
+              value: "anthropic"
             - name: ANTHROPIC_API_KEY
               valueFrom:
                 secretKeyRef:
@@ -46,10 +54,13 @@ spec:
             - name: ANTHROPIC_MODEL
               value: {{ .Values.agentExecutor.config.anthropicModel | default "claude-haiku-4-5-20251001" | quote }}
             {{- else }}
+            {{- /* External Ollama / OpenAI-compat endpoint */}}
+            - name: LLM_PROVIDER
+              value: {{ .Values.agentExecutor.config.llmProvider | quote }}
             - name: OLLAMA_BASE_URL
               value: {{ include "guild-forge.ollamaUrl" . | quote }}
             - name: OLLAMA_MODEL
-              value: {{ .Values.ollama.model | default .Values.agentExecutor.config.ollamaModel | default "qwen2.5:3b" | quote }}
+              value: {{ .Values.agentExecutor.config.ollamaModel | default "qwen2.5:3b" | quote }}
             {{- end }}
           resources:
             {{- toYaml .Values.agentExecutor.resources | nindent 12 }}

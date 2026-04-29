@@ -1,0 +1,67 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Build output
+dist/
+build/
+out/
+*.js.map
+*.d.ts
+*.d.ts.map
+# Keep deliberate JS files (e.g. .claude/helpers/*.js)
+!.claude/**/*.js
+
+# Bun
+.bun/
+bun.lockb
+
+# TypeScript
+*.tsbuildinfo
+tsconfig.tsbuildinfo
+
+# Environment & secrets
+.env
+.env.*
+!.env.example
+*.pem
+values.secret.yaml
+values.secrets.yaml
+# Don't ignore Helm templates — only actual secret value files
+!charts/**/templates/secrets.yaml
+
+# Helm
+charts/*/charts/
+charts/*/Chart.lock
+
+# Kubernetes local overrides
+kubeconfig
+*.kubeconfig
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Test & coverage
+coverage/
+.nyc_output/
+*.lcov
+
+# Temp / scratch
+tmp/
+temp/
+*.tmp

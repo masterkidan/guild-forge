@@ -1,0 +1,11 @@
+{
+  "timestamp": "2026-04-29T01:28:37.013Z",
+  "projectRoot": "/Users/mukundankidambi/guild-forge/guild-forge",
+  "structure": {
+    "hasPackageJson": false,
+    "hasTsConfig": false,
+    "hasClaudeConfig": true,
+    "hasClaudeFlow": true
+  },
+  "scannedAt": 1777426117013
+}

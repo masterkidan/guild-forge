@@ -1,0 +1,13 @@
+{
+  "name": "@guild-forge/debug-dashboard",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "bun run src/index.ts",
+    "dev": "bun --watch run src/index.ts"
+  },
+  "dependencies": {
+    "fastify": "^4.28.1"
+  }
+}

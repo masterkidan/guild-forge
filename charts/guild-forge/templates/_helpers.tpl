@@ -81,10 +81,13 @@ Internal service URLs
 {{- end }}
 
 {{/*
-Ollama base URL — in-cluster when ollama.enabled, otherwise falls back to configured value
+Ollama base URL — returns the URL the agent-executor should use to reach Ollama.
+Priority: embeddedOllama (localhost) > in-cluster service > configured external URL
 */}}
 {{- define "guild-forge.ollamaUrl" -}}
-{{- if .Values.ollama.enabled }}
+{{- if .Values.agentExecutor.config.embeddedOllama }}
+{{- "http://localhost:11434" }}
+{{- else if .Values.ollama.enabled }}
 {{- printf "http://%s-ollama:11434" (include "guild-forge.fullname" .) }}
 {{- else }}
 {{- .Values.agentExecutor.config.ollamaBaseUrl | default "http://host.minikube.internal:11434" }}
